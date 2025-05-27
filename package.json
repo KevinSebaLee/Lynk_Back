@@ -1,0 +1,26 @@
+{
+  "name": "lynkback",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KevinSebaLee/Lynk_Back.git"
+  },
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KevinSebaLee/Lynk_Back/issues"
+  },
+  "homepage": "https://github.com/KevinSebaLee/Lynk_Back#readme",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0"
+  }
+}
