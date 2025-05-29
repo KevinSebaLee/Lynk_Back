@@ -80,14 +80,14 @@ const supabase = createClient(
     console.log(`Basic API test: ${testRes.status} ${testRes.statusText}`);
     
     // Test Supabase client query
-    const { data, error } = await supabase
-      .from('Usuarios')
-      .select('*')
-      .limit(1);
+    // const { data, error } = await supabase
+    //   .from('Usuarios')
+    //   .select('*')
+    //   .limit(1);
     
-    if (error) throw error;
-    console.log('✅ Supabase connection successful!');
-    console.log('Sample data:', data);
+    // if (error) throw error;
+    // console.log('✅ Supabase connection successful!');
+    // console.log('Sample data:', data);
   } catch (err) {
     console.error('❌ Connection failed:', {
       message: err.message,
