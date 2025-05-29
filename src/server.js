@@ -25,8 +25,31 @@ app.get('/usuarios', async (req, res) => {
   }
 });
 
+app.get('/', async (req, res) => {
+  const { id_user } = 1; // Default user ID for testing, replace with actual logic to get user ID
+
+  try{
+    const { data, error } = await supabase
+      .from('Usuarios')
+      .select('tickets')
+      .eq('id', id_user)
+      .limit(10);
+
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data);
+  }catch(err) {
+    console.error('Error in root route:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 app.post('/register', async (req, res) => {
   const {id_genero, id_pais, nombre, apellido, contraseña, email, pfp, nacimiento, id_premium } = req.body;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!req.body) {
     return res.status(400).json({ error: 'Request body is empty' });
@@ -36,7 +59,6 @@ app.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Invalid email format' });
   }
