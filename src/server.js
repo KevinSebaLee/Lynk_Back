@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get('/', async (req, res) => {
-  const { id_user } = req.cookies;
+  const { id_user } = req.cookies.id_user ? req.cookies.id_user : { id_user: null };
 
   try{
     const { data, error } = await supabase
@@ -145,15 +145,16 @@ app.get('/login', async (req, res) => {
 
     const { id, nombre, apellido, pfp } = user;
 
-    res.cookie('id_user', user.id, {
-                httpOnly: true, // cookie not accessible via JavaScript
-                sameSite: 'lax', // or 'none' for cross-origin
-                secure: false, // set to true if using HTTPS
-              });
+    res.cookie('id_user', user.id, 
+          {
+            httpOnly: true, // cookie not accessible via JavaScript
+            sameSite: 'lax', // or 'none' for cross-origin
+            secure: false, // set to true if using HTTPS
+          });
 
     return res.json({ id, nombre, apellido, pfp });
 
-    // http://localhost:3000/login?email=pepe.troncoso@gmail.com&contrase%C3%B1a=Pepe12345Troncoso
+    // http://localhost:3000/login?email=pepe.troncoso@gmail.com&contraseña=Pepe12345Troncoso
 
   } catch (err) {
     console.error('Login Error:', err);
