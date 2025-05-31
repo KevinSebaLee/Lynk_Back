@@ -79,7 +79,7 @@ const supabase = createClient(
     });
     console.log(`Basic API test: ${testRes.status} ${testRes.statusText}`);
     
-    // Test Supabase client query
+    // // Test Supabase client query
     // const { data, error } = await supabase
     //   .from('Usuarios')
     //   .select('*')

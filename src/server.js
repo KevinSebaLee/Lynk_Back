@@ -1,32 +1,15 @@
 import express from 'express';
 import supabase from './modules/supabaseClient.js';
 import bcrypt from 'bcryptjs';
+import cookieParser from 'cookie-parser';
 
 const app = express();
+
 app.use(express.json());
-
-app.get('/usuarios', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('Usuarios')
-      .select('*')
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json(data);
-  } catch (err) {
-    console.error('Connection Error:', err);
-    res.status(500).json({ 
-      error: 'Failed to connect to Supabase',
-      details: err.message 
-    });
-  }
-});
+app.use(cookieParser());
 
 app.get('/', async (req, res) => {
-  const { id_user } = 1; // Default user ID for testing, replace with actual logic to get user ID
+  const { id_user } = req.cookies;
 
   try{
     const { data, error } = await supabase
@@ -44,6 +27,33 @@ app.get('/', async (req, res) => {
   }catch(err) {
     console.error('Error in root route:', err);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/usuarios', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('Usuarios')
+      .select(`
+        *,
+        Paises(nombre),
+        Generos(nombre),
+        Planes(titulo)
+      `);
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    const cleanedData = data.map(({ id_genero, id_pais, id_premium, ...rest }) => rest);
+
+    res.json(cleanedData);
+  } catch (err) {
+    console.error('Connection Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to connect to Supabase',
+      details: err.message 
+    });
   }
 });
 
@@ -105,6 +115,50 @@ app.post('/register', async (req, res) => {
     console.error('Registration Error:', err);
     return res.status(500).json({ 
       error: 'Failed to register user', 
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+});
+
+app.get('/login', async (req, res) => {
+  const { email, contraseña } = req.query;
+
+  if (!email || !contraseña) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  try {
+    const { data: user, error } = await supabase
+      .from('Usuarios')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(contraseña, user.contraseña);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const { id, nombre, apellido, pfp } = user;
+
+    res.cookie('id_user', user.id, {
+                httpOnly: true, // cookie not accessible via JavaScript
+                sameSite: 'lax', // or 'none' for cross-origin
+                secure: false, // set to true if using HTTPS
+              });
+
+    return res.json({ id, nombre, apellido, pfp });
+
+    // http://localhost:3000/login?email=pepe.troncoso@gmail.com&contrase%C3%B1a=Pepe12345Troncoso
+
+  } catch (err) {
+    console.error('Login Error:', err);
+    return res.status(500).json({ 
+      error: 'Failed to login', 
       details: process.env.NODE_ENV === 'development' ? err.message : undefined 
     });
   }
