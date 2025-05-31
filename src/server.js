@@ -200,6 +200,15 @@ app.get('/login', async (req, res) => {
   }
 });
 
+app.get('/logout', (req, res) => {
+  res.clearCookie('id_user', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false
+  });
+  res.json({ message: 'Logged out successfully' });
+});
+
 app.get('/test-connection', async (req, res) => {
   try {
     const response = await fetch('https://wqawnxhzcqxdhwyibvhe.supabase.co/rest/v1/', {
