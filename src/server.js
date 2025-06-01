@@ -46,13 +46,7 @@ app.get('/profile', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('Usuarios')
-      .select(`
-        nombre,
-        apellido,
-        pfp,
-        Paises(nombre),
-        Planes(titulo)
-      `)
+      .select(`nombre, apellido, pfp, Paises(nombre), Planes(titulo)`)
       .eq('id', id_user)
       .single();
 
@@ -72,23 +66,26 @@ app.get('/profile', async (req, res) => {
 });
 
 app.get('/usuarios', async (req, res) => {
+  const id_user = req.query.id_user ? parseInt(req.query.id_user) : null;
+  
   try {
-    const { data, error } = await supabase
-      .from('Usuarios')
-      .select(`
-        *,
-        Paises(nombre),
-        Generos(nombre),
-        Planes(titulo)
-      `);
+    const { data, error } = await (
+      id_user
+        ? supabase
+            .from('Usuarios')
+            .select(`*, Paises(nombre), Generos(nombre), Planes(titulo)`)
+            .eq('id', id_user)
+        : supabase
+            .from('Usuarios')
+            .select(`*, Paises(nombre), Generos(nombre), Planes(titulo)`)
+    );
+
     if (error) {
       console.error('Supabase Query Error:', error);
       return res.status(500).json({ error: error.message });
     }
 
     const cleanedData = data.map(({ id_genero, id_pais, id_premium, ...rest }) => rest);
-
-    
 
     res.json(cleanedData);
   } catch (err) {
@@ -126,7 +123,6 @@ app.post('/register', async (req, res) => {
       .select('email')
       .eq('email', email)
       .single();
-
     if (existingUser) {
       return res.status(409).json({ error: 'Email already registered' });
     }
@@ -135,17 +131,7 @@ app.post('/register', async (req, res) => {
 
     const { error } = await supabase
       .from('Usuarios')
-      .insert({ 
-        id_genero, 
-        id_pais, 
-        nombre, 
-        apellido, 
-        contraseña: hashedPassword,
-        email, 
-        pfp, 
-        nacimiento, 
-        id_premium 
-      });
+      .insert({ id_genero, id_pais, nombre, apellido, contraseña: hashedPassword,email, pfp, nacimiento, id_premium });
 
     if (error) {
       console.error('Supabase Insert Error:', error);
@@ -171,19 +157,7 @@ app.post('/eventos', async (req, res) => {
   try {
     const { error } = await supabase
       .from('Eventos')
-      .insert({ 
-        id_categoria, 
-        nombre, 
-        descripcion, 
-        fecha, 
-        ubicacion, 
-        visibilidad, 
-        presupuesto, 
-        objetivo, 
-        color, 
-        imagen: imagenVerificar, 
-        id_creador 
-      });
+      .insert({ id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen: imagenVerificar, id_creador });
 
     if (error) {
       console.error('Supabase Insert Error:', error);
@@ -209,19 +183,11 @@ app.get('/eventos', async (req, res) => {
       id_user
         ? supabase
             .from('Eventos')
-            .select(`
-              *,
-              Usuarios(nombre, apellido, pfp),
-              Categorias(nombre)
-            `)
+            .select(`*,Usuarios(nombre, apellido, pfp),Categorias(nombre)`)
             .eq('id_creador', id_user)
         : supabase
             .from('Eventos')
-            .select(`
-              *,
-              Usuarios(nombre, apellido, pfp),
-              Categorias(nombre)
-            `)
+            .select(`*,Usuarios(nombre, apellido, pfp),Categorias(nombre)`)
     );
     if (error) {
       console.error('Supabase Query Error:', error);
@@ -257,7 +223,6 @@ app.get('/login', async (req, res) => {
       .select('*')
       .eq('email', email)
       .single();
-
     if (error || !user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
