@@ -11,6 +11,12 @@ app.use(cookieParser());
 app.get('/', async (req, res) => {
   const { id_user } = req.cookies ? req.cookies : { id_user: null };
 
+  if(id_user == null) {
+    console.log('Redirecting to /login because id_user is missing');
+    res.redirect('/login');
+    return;
+  }
+  
   try{
     const { data, error } = await supabase
       .from('Usuarios')
@@ -23,7 +29,7 @@ app.get('/', async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json(data);
+    res.json({data, 'id_user': id_user});
   }catch(err) {
     console.error('Error in root route:', err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -81,6 +87,8 @@ app.get('/usuarios', async (req, res) => {
     }
 
     const cleanedData = data.map(({ id_genero, id_pais, id_premium, ...rest }) => rest);
+
+    
 
     res.json(cleanedData);
   } catch (err) {
@@ -151,6 +159,87 @@ app.post('/register', async (req, res) => {
     return res.status(500).json({ 
       error: 'Failed to register user', 
       details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+});
+
+app.post('/eventos', async (req, res) => {
+  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_creador } = req.body;
+
+  const imagenVerificar = imagen ?? null;
+
+  try {
+    const { error } = await supabase
+      .from('Eventos')
+      .insert({ 
+        id_categoria, 
+        nombre, 
+        descripcion, 
+        fecha, 
+        ubicacion, 
+        visibilidad, 
+        presupuesto, 
+        objetivo, 
+        color, 
+        imagen: imagenVerificar, 
+        id_creador 
+      });
+
+    if (error) {
+      console.error('Supabase Insert Error:', error);
+      return res.status(500).json({ error: 'Database error', details: error.message });
+    }
+
+    return res.status(201).json({ message: 'Event logged successfully' });
+    
+  } catch (err) {
+    console.error('Event Logging Error:', err);
+    return res.status(500).json({ 
+      error: 'Failed to log event', 
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+});
+
+app.get('/eventos', async (req, res) => {
+  const id_user = req.query.id_user ? parseInt(req.query.id_user) : null;
+
+  try {
+    const { data, error } = await (
+      id_user
+        ? supabase
+            .from('Eventos')
+            .select(`
+              *,
+              Usuarios(nombre, apellido, pfp),
+              Categorias(nombre)
+            `)
+            .eq('id_creador', id_user)
+        : supabase
+            .from('Eventos')
+            .select(`
+              *,
+              Usuarios(nombre, apellido, pfp),
+              Categorias(nombre)
+            `)
+    );
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    const cleanedData = data.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }) => ({
+      ...rest,
+      presupuesto: presupuesto.toLocaleString(),
+      objetivo: objetivo.toLocaleString()
+    }));
+
+    res.json(cleanedData);
+  } catch (err) {
+    console.error('Connection Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to connect to Supabase',
+      details: err.message 
     });
   }
 });
