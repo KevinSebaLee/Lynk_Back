@@ -219,7 +219,7 @@ app.get('/agenda', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('EventosAgendados')
-      .select(`Eventos(nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen)`)
+      .select(`Eventos(nombre, descripcion, fecha, ubicacion, color, imagen)`)
       .eq('id_user', id_user);
 
     if (error) {
