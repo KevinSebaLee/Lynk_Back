@@ -1,7 +1,8 @@
 import express from 'express';
-import supabase from './modules/supabaseClient.js';
+import supabase from './database/supabaseClient.js';
 import bcrypt from 'bcryptjs';
 import cookieParser from 'cookie-parser';
+import {verifyUser} from './modules/utils.js';
 
 const app = express();
 
@@ -11,11 +12,7 @@ app.use(cookieParser());
 app.get('/', async (req, res) => {
   const { id_user } = req.cookies ? req.cookies : { id_user: null };
 
-  if(id_user == null) {
-    console.log('Redirecting to /login because id_user is missing');
-    res.redirect('/login');
-    return;
-  }
+  verifyUser(req, res);
   
   try{
     const { data, error } = await supabase
@@ -211,11 +208,9 @@ app.get('/eventos', async (req, res) => {
 
 app.get('/agenda', async (req, res) => {
   const { id_user } = req.cookies ? req.cookies : { id_user: null };
-  if (!id_user) {
-    console.log('Redirecting to /login because id_user is missing');
-    res.redirect('/login');
-    return;
-  }
+  
+  verifyUser(req, res);
+
   try {
     const { data, error } = await supabase
       .from('EventosAgendados')
@@ -241,11 +236,7 @@ app.get('/eventos/agendar', async (req, res) => {
   const { id_evento } = req.query;
   const { id_user } = req.cookies
 
-  if( id_user == null) {
-    console.log('Redirecting to /login because id_user is missing');
-    res.redirect('/login');
-    return;
-  }
+  verifyUser(req, res);
 
   if (!id_evento || !id_user) {
     return res.status(400).json({ error: 'Event ID and User ID are required' });
