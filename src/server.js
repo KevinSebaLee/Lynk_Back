@@ -20,10 +20,9 @@ app.get('/', async (req, res) => {
   try{
     const { data, error } = await supabase
       .from('Usuarios')
-      .select('tickets')
+      .select('tickets, id_premium')
       .eq('id', id_user)
-      .limit(10);
-
+      .unique();
     if (error) {
       console.error('Supabase Query Error:', error);
       return res.status(500).json({ error: error.message });
@@ -206,6 +205,43 @@ app.get('/eventos', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to connect to Supabase',
       details: err.message 
+    });
+  }
+});
+
+app.get('/eventos/agendar', async (req, res) => {
+  const { id_evento } = req.query;
+  const { id_user } = req.cookies
+
+  if( id_user == null) {
+    console.log('Redirecting to /login because id_user is missing');
+    res.redirect('/login');
+    return;
+  }
+
+  if (!id_evento || !id_user) {
+    return res.status(400).json({ error: 'Event ID and User ID are required' });
+  }
+
+  // http://localhost:3000/eventos/agendar?id_evento=1
+
+  try {
+    const { error } = await supabase
+      .from('EventosAgendados')
+      .insert({ id_evento, id_user });
+
+    if (error) {
+      console.error('Supabase Insert Error:', error);
+      return res.status(500).json({ error: 'Database error', details: error.message });
+    }
+
+    return res.status(201).json({ message: 'Event scheduled successfully' });
+    
+  } catch (err) {
+    console.error('Event Scheduling Error:', err);
+    return res.status(500).json({ 
+      error: 'Failed to schedule event', 
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
     });
   }
 });
