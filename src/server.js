@@ -251,9 +251,19 @@ app.get('/eventos/agendar', async (req, res) => {
     return res.status(400).json({ error: 'Event ID and User ID are required' });
   }
 
-  // http://localhost:3000/eventos/agendar?id_evento=1
+  // http://localhost:3000/eventos/agendar?id_evento=2
 
   try {
+    const { data: existingScheduledEvent, error: lookupError } = await supabase
+      .from('EventosAgendados')
+      .select('id_evento')
+      .eq('id_evento', id_evento)
+      .single();
+
+    if (existingScheduledEvent) {
+      return res.status(409).json({ error: 'Event already registered' });
+    }
+
     const { error } = await supabase
       .from('EventosAgendados')
       .insert({ id_evento, id_user });
