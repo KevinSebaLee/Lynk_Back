@@ -209,6 +209,34 @@ app.get('/eventos', async (req, res) => {
   }
 });
 
+app.get('/agenda', async (req, res) => {
+  const { id_user } = req.cookies ? req.cookies : { id_user: null };
+  if (!id_user) {
+    console.log('Redirecting to /login because id_user is missing');
+    res.redirect('/login');
+    return;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('EventosAgendados')
+      .select(`Eventos(nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen)`)
+      .eq('id_user', id_user);
+
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    const cleanedData = data.map(({ id_evento, id_user, ...rest }) => rest);
+    res.json(cleanedData);
+  } catch (err) {
+    console.error('Connection Error:', err);
+    res.status(500).json({
+      error: 'Failed to connect to Supabase',
+      details: err.message
+    });
+  }
+});
+
 app.get('/eventos/agendar', async (req, res) => {
   const { id_evento } = req.query;
   const { id_user } = req.cookies
