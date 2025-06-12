@@ -263,14 +263,14 @@ app.get('/eventos/:id/movimientos', async (req, res) => {
         .select('id_creador')
         .eq('id', id)
         .single();
-        
+
       if(!eventOwner){
         return res.status(409).json({ error: 'Not event owner' });
       }
 
       const { data, error } = await supabase
         .from('Eventos')
-        .select(`*, Usuarios(nombre, apellido, pfp)`)
+        .select(`nombre, presupuesto, objetivo, color, Movimientos(*)`)
         .eq('id', id)
         .eq('id_creador', id_user);
 
@@ -278,8 +278,7 @@ app.get('/eventos/:id/movimientos', async (req, res) => {
         console.error('Supabase Query Error:', error);
         return res.status(500).json({ error: error.message });
       }
-      const cleanedData = data.map(({ id_evento, id_user, ...rest }) => rest);
-      res.json(cleanedData);
+      res.json(data);
     } catch (err) {
       console.error('Connection Error:', err);
       res.status(500).json({
