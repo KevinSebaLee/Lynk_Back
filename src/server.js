@@ -206,32 +206,6 @@ app.get('/eventos', async (req, res) => {
   }
 });
 
-app.get('/agenda', async (req, res) => {
-  const { id_user } = req.cookies ? req.cookies : { id_user: null };
-  
-  verifyUser(req, res);
-
-  try {
-    const { data, error } = await supabase
-      .from('EventosAgendados')
-      .select(`Eventos(nombre, descripcion, fecha, ubicacion, color, imagen)`)
-      .eq('id_user', id_user);
-
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-    const cleanedData = data.map(({ id_evento, id_user, ...rest }) => rest);
-    res.json(cleanedData);
-  } catch (err) {
-    console.error('Connection Error:', err);
-    res.status(500).json({
-      error: 'Failed to connect to Supabase',
-      details: err.message
-    });
-  }
-});
-
 app.get('/eventos/agendar', async (req, res) => {
   const { id_evento } = req.query;
   const { id_user } = req.cookies
@@ -271,6 +245,73 @@ app.get('/eventos/agendar', async (req, res) => {
     return res.status(500).json({ 
       error: 'Failed to schedule event', 
       details: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+});
+
+app.get('/eventos/:id/movimientos', async (req, res) => {
+  const { id } = req.params;
+  const { id_user } = req.cookies ? req.cookies : { id_user: null };
+  if (!id) {
+    return res.status(400).json({ error: 'Event ID is required' });
+  }
+
+  verifyUser(req.cookies, res, async () => {
+    try {
+      const { data: eventOwner, error: eventError } = await supabase
+        .from('Eventos')
+        .select('id_creador')
+        .eq('id', id)
+        .single();
+        
+      if(!eventOwner){
+        return res.status(409).json({ error: 'Not event owner' });
+      }
+
+      const { data, error } = await supabase
+        .from('Eventos')
+        .select(`*, Usuarios(nombre, apellido, pfp)`)
+        .eq('id', id)
+        .eq('id_creador', id_user);
+
+      if (error) {
+        console.error('Supabase Query Error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+      const cleanedData = data.map(({ id_evento, id_user, ...rest }) => rest);
+      res.json(cleanedData);
+    } catch (err) {
+      console.error('Connection Error:', err);
+      res.status(500).json({
+        error: 'Failed to connect ot Supabase',
+        details: err.message
+      });
+    }
+  });
+});
+
+app.get('/agenda', async (req, res) => {
+  const { id_user } = req.cookies ? req.cookies : { id_user: null };
+  
+  verifyUser(req, res);
+
+  try {
+    const { data, error } = await supabase
+      .from('EventosAgendados')
+      .select(`Eventos(nombre, descripcion, fecha, ubicacion, color, imagen)`)
+      .eq('id_user', id_user);
+
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    const cleanedData = data.map(({ id_evento, id_user, ...rest }) => rest);
+    res.json(cleanedData);
+  } catch (err) {
+    console.error('Connection Error:', err);
+    res.status(500).json({
+      error: 'Failed to connect to Supabase',
+      details: err.message
     });
   }
 });
