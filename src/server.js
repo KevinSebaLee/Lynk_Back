@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
   verifyUser(req.cookies, res, async () => {
     try {
       const { id_user } = req.cookies || {};
@@ -30,6 +30,64 @@ app.get('/', (req, res) => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
+});
+
+app.get('/tickets', async (req, res) => {
+  const id_user = req.cookies && req.cookies.id_user;
+
+  if (!id_user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('Movimientos')
+      .select('*, Usuarios(tickets), Eventos(nombre), Monedas(nombre), Categorias(nombre), TipoMovimientos(icon)')
+      .eq('id_user', id_user)
+      .single(); 
+
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    const { id, id_user: uid, id_evento, id_moneda, id_categoria, id_tipo_movimiento, ...cleanedData } = data;
+
+    res.json(cleanedData);
+  } catch (err) {
+    console.error('Connection Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to connect to Supabase',
+      details: err.message 
+    });
+  }
+});
+
+app.get('/tickets/cupones', async (req, res) => {
+  const id_user = req.cookies && req.cookies.id_user;
+
+  if (!id_user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('Cupones')
+      .select('*')
+
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error('Connection Error:', err);
+    res.status(500).json({ 
+      error: 'Failed to connect to Supabase',
+      details: err.message 
+    });
+  }
 });
 
 app.get('/profile', async (req, res) => {
