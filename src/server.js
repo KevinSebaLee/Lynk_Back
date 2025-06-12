@@ -9,27 +9,27 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/', async (req, res) => {
-  const { id_user } = req.cookies ? req.cookies : { id_user: null };
+app.get('/', (req, res) => {
+  verifyUser(req.cookies, res, async () => {
+    try {
+      const { id_user } = req.cookies || {};
+      const { data, error } = await supabase
+        .from('Usuarios')
+        .select('tickets, id_premium')
+        .eq('id', id_user)
+        .single();
 
-  verifyUser(req, res);
-  
-  try{
-    const { data, error } = await supabase
-      .from('Usuarios')
-      .select('tickets, id_premium')
-      .eq('id', id_user)
-      .unique();
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      return res.status(500).json({ error: error.message });
+      if (error) {
+        console.error('Supabase Query Error:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      res.json({ data, id_user });
+    } catch (err) {
+      console.error('Error in root route:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-
-    res.json({data, 'id_user': id_user});
-  }catch(err) {
-    console.error('Error in root route:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+  });
 });
 
 app.get('/profile', async (req, res) => {
