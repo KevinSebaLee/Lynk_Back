@@ -1,6 +1,7 @@
 import express from 'express';
 import supabase from '../database/supabaseClient.js';
 import { requireAuth } from '../middleware/auth.js';
+import { supaBaseErrorHandler } from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
@@ -31,11 +32,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     res.json(cleanedData);
   } catch (err) {
-    console.error('Connection Error:', err);
-    res.status(500).json({ 
-      error: 'Failed to connect to Supabase',
-      details: err.message 
-    });
+    supaBaseErrorHandler(err, res, 'Failed to fetch events');
   }
 });
 
@@ -72,11 +69,7 @@ router.get('/agendar', requireAuth, async (req, res) => {
     return res.status(201).json({ message: 'Event scheduled successfully' });
     
   } catch (err) {
-    console.error('Event Scheduling Error:', err);
-    return res.status(500).json({ 
-      error: 'Failed to schedule event', 
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
-    });
+    supaBaseErroHandler(err, res, 'Failed to insert event in agenda');
   }
 });
 
@@ -98,50 +91,44 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(201).json({ message: 'Event logged successfully' });
     
   } catch (err) {
-    console.error('Event Logging Error:', err);
-    return res.status(500).json({ 
-      error: 'Failed to log event', 
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
-    });
+    supaBaseErrorHandler(err, res, 'Failed to fetch users');
   }
 });
 
 router.get('/:id/movimientos', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { id_user } = req.cookies ? req.cookies : { id_user: null };
+  
   if (!id) {
     return res.status(400).json({ error: 'Event ID is required' });
   }
-    try {
-      const { data: eventOwner, error: eventError } = await supabase
-        .from('Eventos')
-        .select('id_creador')
-        .eq('id', id)
-        .single();
 
-      if(!eventOwner){
-        return res.status(409).json({ error: 'Not event owner' });
-      }
+  try {
+    const { data: eventOwner, error: eventError } = await supabase
+      .from('Eventos')
+      .select('id_creador')
+      .eq('id', id)
+      .single();
 
-      const { data, error } = await supabase
-        .from('Eventos')
-        .select(`nombre, presupuesto, objetivo, color, Movimientos(monto, titulo, TipoMovimientos(titulo, icon), Categorias(nombre), Monedas(nombre))`)
-        .eq('id', id)
-        .eq('id_creador', id_user);
-
-      if (error) {
-        console.error('Supabase Query Error:', error);
-        return res.status(500).json({ error: error.message });
-      }
-      
-      res.json(data);
-    } catch (err) {
-      console.error('Connection Error:', err);
-      res.status(500).json({
-        error: 'Failed to connect ot Supabase',
-        details: err.message
-      });
+    if(!eventOwner){
+      return res.status(409).json({ error: 'Not event owner' });
     }
+
+    const { data, error } = await supabase
+      .from('Eventos')
+      .select(`nombre, presupuesto, objetivo, color, Movimientos(monto, titulo, TipoMovimientos(titulo, icon), Categorias(nombre), Monedas(nombre))`)
+      .eq('id', id)
+      .eq('id_creador', id_user);
+
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json(data);
+  } catch (err) {
+    supaBaseErrorHandler(err, res, 'Failed to fetch movimientos');
+  }
 });
 
 export default router;

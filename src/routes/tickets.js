@@ -1,6 +1,7 @@
 import express from 'express';
 import supabase from '../database/supabaseClient.js';
 import { requireAuth } from '../middleware/auth.js';
+import { supaBaseErrorHandler } from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
@@ -22,11 +23,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     res.json(cleanedData);
   } catch (err) {
-    console.error('Connection Error:', err);
-    res.status(500).json({ 
-      error: 'Failed to connect to Supabase',
-      details: err.message 
-    });
+    supaBaseErrorHandler(err, res, 'Failed to fetch user data');
   }
 });
 
@@ -44,11 +41,7 @@ router.get('/cupones', requireAuth, async (req, res) => {
 
     res.json(data);
   } catch (err) {
-    console.error('Connection Error:', err);
-    res.status(500).json({ 
-      error: 'Failed to connect to Supabase',
-      details: err.message 
-    });
+    supaBaseErrorHandler(err, res, 'Failed to fetch offers');
   }
 });
 

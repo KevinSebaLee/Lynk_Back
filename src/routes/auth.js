@@ -1,7 +1,7 @@
 import express from 'express';
 import supabase from '../database/supabaseClient.js';
-import { requireAuth } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
+import {supaBaseErrorHandler} from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
@@ -41,11 +41,7 @@ router.get('/login', async (req, res) => {
     // http://localhost:3000/login?email=pepe.troncoso@gmail.com&contraseña=Pepe12345Troncoso
 
   } catch (err) {
-    console.error('Login Error:', err);
-    return res.status(500).json({ 
-      error: 'Failed to login', 
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
-    });
+    supaBaseErrorHandler(err, res, 'Failed to fetch user to login');
   }
 });
 

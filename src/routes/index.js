@@ -1,6 +1,6 @@
 import express from 'express';
 import supabase from '../database/supabaseClient.js';
-import bcrypt from 'bcryptjs';
+import {supaBaseErrorHandler} from '../utils/supaBaseErrorHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -21,8 +21,7 @@ router.get('/', requireAuth, async (req, res) => {
 
         res.json({ data, id_user });
     } catch (err) {
-        console.error('Error in root route:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
+        supaBaseErrorHandler(err, res, 'Failed to fetch user data');
     }
 });
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import supabase from '../database/supabaseClient.js';
 import { requireAuth } from '../middleware/auth.js';
+import { supaBaseErrorHandler } from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
@@ -48,11 +49,7 @@ router.post('/', async (req, res) => {
     return res.status(201).json({ message: 'User registered successfully' });
     
   } catch (err) {
-    console.error('Registration Error:', err);
-    return res.status(500).json({ 
-      error: 'Failed to register user', 
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined 
-    });
+    supaBaseErrorHandler(err, res, 'Failed to create user');
   }
 });
 
