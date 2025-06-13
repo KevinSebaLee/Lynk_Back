@@ -125,7 +125,7 @@ router.get('/:id/movimientos', requireAuth, async (req, res) => {
 
       const { data, error } = await supabase
         .from('Eventos')
-        .select(`nombre, presupuesto, objetivo, color, Movimientos(*)`)
+        .select(`nombre, presupuesto, objetivo, color, Movimientos(monto, titulo, TipoMovimientos(titulo, icon), Categorias(nombre), Monedas(nombre))`)
         .eq('id', id)
         .eq('id_creador', id_user);
 
@@ -133,6 +133,7 @@ router.get('/:id/movimientos', requireAuth, async (req, res) => {
         console.error('Supabase Query Error:', error);
         return res.status(500).json({ error: error.message });
       }
+      
       res.json(data);
     } catch (err) {
       console.error('Connection Error:', err);
