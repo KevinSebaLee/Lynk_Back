@@ -24,14 +24,11 @@ app.use(cookieParser());
 app.use('/', Home);
 app.use('/usuarios', Usuarios);
 app.use('/tickets', Tickets);
-app.use('/tickets/cupones', Tickets);
 app.use('/perfil', Perfil);
 app.use('/register', Registrar)
 app.use('/eventos', Eventos);
-app.use('/eventos/agendar', Eventos);
-app.use('/:id/movimientos', Eventos);
 app.use('/agenda', Agenda);
-app.use('/', Auth);
+app.use('/auth', Auth);
 app.use('/test-connection', Test)
 
 app.use(errorHandler);

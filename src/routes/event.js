@@ -43,8 +43,6 @@ router.get('/agendar', requireAuth, async (req, res) => {
   const { id_evento } = req.query;
   const { id_user } = req.cookies
 
-  verifyUser(req, res);
-
   if (!id_evento || !id_user) {
     return res.status(400).json({ error: 'Event ID and User ID are required' });
   }
@@ -114,8 +112,6 @@ router.get('/:id/movimientos', requireAuth, async (req, res) => {
   if (!id) {
     return res.status(400).json({ error: 'Event ID is required' });
   }
-
-  verifyUser(req.cookies, res, async () => {
     try {
       const { data: eventOwner, error: eventError } = await supabase
         .from('Eventos')
@@ -145,7 +141,6 @@ router.get('/:id/movimientos', requireAuth, async (req, res) => {
         details: err.message
       });
     }
-  });
 });
 
 export default router;
