@@ -1,28 +1,22 @@
 import express from 'express';
-import supabase from '../database/supabaseClient.js';
-import {supaBaseErrorHandler} from '../utils/supaBaseErrorHandler.js';
+import pool from '../database/pgClient.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
-    try {
-        const { id_user } = req.cookies || {};
-        const { data, error } = await supabase
-        .from('Usuarios')
-        .select('tickets, id_premium')
-        .eq('id', id_user)
-        .single();
+  try {
+    const { id_user } = req.cookies || {};
+    const result = await pool.query(
+      'SELECT tickets, id_premium FROM "Usuarios" WHERE id = $1 LIMIT 1',
+      [id_user]
+    );
 
-        if (error) {
-        console.error('Supabase Query Error:', error);
-        return res.status(500).json({ error: error.message });
-        }
-
-        res.json({ data, id_user });
-    } catch (err) {
-        supaBaseErrorHandler(err, res, 'Failed to fetch user data');
-    }
+    res.json({ data: result.rows[0], id_user });
+  } catch (err) {
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch user data' });
+  }
 });
 
 export default router;

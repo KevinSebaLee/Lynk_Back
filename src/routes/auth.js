@@ -1,7 +1,6 @@
 import express from 'express';
-import supabase from '../database/supabaseClient.js';
+import pool from '../database/pgClient.js';
 import bcrypt from 'bcryptjs';
-import {supaBaseErrorHandler} from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
@@ -13,12 +12,12 @@ router.get('/login', async (req, res) => {
   }
 
   try {
-    const { data: user, error } = await supabase
-      .from('Usuarios')
-      .select('*')
-      .eq('email', email)
-      .single();
-    if (error || !user) {
+    const result = await pool.query(
+      'SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1', [email]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -29,19 +28,17 @@ router.get('/login', async (req, res) => {
 
     const { id, nombre, apellido, pfp } = user;
 
-    res.cookie('id_user', user.id, 
-          {
-            httpOnly: true, // cookie not accessible via JavaScript
-            sameSite: 'lax', // or 'none' for cross-origin
-            secure: false, // set to true if using HTTPS
-          });
+    res.cookie('id_user', user.id, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+    });
 
     return res.json({ id, nombre, apellido, pfp });
 
-    // http://localhost:3000/login?email=pepe.troncoso@gmail.com&contraseña=Pepe12345Troncoso
-
   } catch (err) {
-    supaBaseErrorHandler(err, res, 'Failed to fetch user to login');
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch user to login' });
   }
 });
 

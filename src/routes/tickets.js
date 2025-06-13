@@ -1,47 +1,43 @@
 import express from 'express';
-import supabase from '../database/supabaseClient.js';
+import pool from '../database/pgClient.js';
 import { requireAuth } from '../middleware/auth.js';
-import { supaBaseErrorHandler } from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
-  const id_user = req.id_user; // set by requireAuth
+  const id_user = req.id_user;
 
   try {
-    const { data, error } = await supabase
-      .from('Movimientos')
-      .select('*, Usuarios(tickets), Eventos(nombre), Monedas(nombre), Categorias(nombre), TipoMovimientos(icon)')
-      .eq('id_user', id_user);
+    const result = await pool.query(`
+      SELECT m.*, u.tickets, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
+      FROM "Movimientos" m
+      LEFT JOIN "Usuarios" u ON m.id_user = u.id
+      LEFT JOIN "Eventos" e ON m.id_evento = e.id
+      LEFT JOIN "Monedas" mo ON m.id_moneda = mo.id
+      LEFT JOIN "Categorias" c ON m.id_categoria = c.id
+      LEFT JOIN "TipoMovimientos" tm ON m.id_tipo_movimiento = tm.id
+      WHERE m.id_user = $1
+    `, [id_user]);
 
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    const cleanedData = data?.map(({ id, id_user: uid, id_evento, id_moneda, id_categoria, id_tipo_movimiento, ...rest }) => rest);
+    const cleanedData = result.rows.map(({ id, id_user: uid, id_evento, id_moneda, id_categoria, id_tipo_movimiento, ...rest }) => rest);
 
     res.json(cleanedData);
   } catch (err) {
-    supaBaseErrorHandler(err, res, 'Failed to fetch user data');
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch user data' });
   }
 });
 
 router.get('/cupones', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('Cupones')
-      .select('*')
-      .eq('id_user', req.id_user);
-
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json(data);
+    const result = await pool.query(
+      'SELECT * FROM "Cupones" WHERE id_user = $1',
+      [req.id_user]
+    );
+    res.json(result.rows);
   } catch (err) {
-    supaBaseErrorHandler(err, res, 'Failed to fetch offers');
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch offers' });
   }
 });
 

@@ -1,7 +1,6 @@
 import express from 'express';
-import supabase from '../database/supabaseClient.js';
+import pool from '../database/pgClient.js';
 import { requireAuth } from '../middleware/auth.js';
-import { supaBaseErrorHandler } from '../utils/supaBaseErrorHandler.js';
 
 const router = express.Router();
 
@@ -9,19 +8,18 @@ router.get('/', requireAuth, async (req, res) => {
   const { id_user } = req.cookies ? req.cookies : { id_user: null };
 
   try {
-    const { data, error } = await supabase
-      .from('EventosAgendados')
-      .select(`Eventos(nombre, descripcion, fecha, ubicacion, color, imagen)`)
-      .eq('id_user', id_user);
+    const result = await pool.query(
+      `SELECT e.nombre, e.descripcion, e.fecha, e.ubicacion, e.color, e.imagen
+        FROM "EventosAgendados" ea
+        JOIN "Eventos" e ON ea.id_evento = e.id
+        WHERE ea.id_user = $1`,
+      [id_user]
+    );
 
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-    const cleanedData = data.map(({ id_evento, id_user, ...rest }) => rest);
-    res.json(cleanedData);
+    res.json(result.rows);
   } catch (err) {
-    supaBaseErrorHandler(err, res, 'Failed to fetch agenda');
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch agenda' });
   }
 });
 
