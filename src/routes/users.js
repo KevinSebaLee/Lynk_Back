@@ -7,6 +7,8 @@ const router = express.Router();
 router.get('/', requireAuth, async (req, res) => {
     const id_user = req.query.id_user ? parseInt(req.query.id_user) : null;
 
+    console.log(id_user)
+
     // Adjust the query to join the related tables as needed
     const baseQuery = `
         SELECT u.*, p.nombre AS pais_nombre, g.nombre AS genero_nombre, pl.titulo AS plan_titulo

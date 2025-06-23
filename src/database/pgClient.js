@@ -22,9 +22,7 @@ const pool = new Pool({
 
     // Test basic connection and query
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM "Usuarios" LIMIT 1;');
     console.log('✅ PostgreSQL connection successful!');
-    console.log('Sample data:', result.rows);
     client.release();
   } catch (err) {
     console.error('❌ Connection failed:', {

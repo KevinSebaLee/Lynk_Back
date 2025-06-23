@@ -4,8 +4,8 @@ import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
-router.get('/login', async (req, res) => {
-  const { email, contraseña } = req.query;
+router.post('/login', async (req, res) => {
+  const { email, contraseña } = req.body;
 
   if (!email || !contraseña) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -31,7 +31,7 @@ router.get('/login', async (req, res) => {
     res.cookie('id_user', user.id, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
     });
 
     return res.json({ id, nombre, apellido, pfp });
