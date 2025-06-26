@@ -1,55 +1,72 @@
 # Lynk – Plataforma de Gestión de Eventos
 
-**Lynk** es una aplicación diseñada para facilitar la creación, organización y promoción de eventos tanto para organizadores independientes como para empresas. Nacida del concepto de "conexión", busca ser el puente entre quienes organizan y quienes participan, optimizando la experiencia de ambos.
+**Lynk** es una plataforma integral diseñada para transformar la gestión, organización y promoción de eventos, tanto para organizadores independientes como para instituciones y empresas. Nuestra visión es centralizar todas las herramientas clave en un solo lugar, facilitando cada etapa del proceso y potenciando la participación.
 
-## 🧩 ¿Qué problema resuelve?
+---
 
-Actualmente, muchas organizaciones y personas enfrentan desafíos para gestionar eventos: mala administración de recursos, dificultades para promocionar, baja participación y falta de herramientas digitales integradas. **Lynk** se propone resolver estos problemas brindando una solución digital integral.
+## ✨ Características Destacadas
 
-## 🚀 Propuesta de valor
+### 📅 Agenda Interactiva y Planificación Visual
+- Visualiza y organiza todos tus eventos en una agenda intuitiva.
+- Arrastra y suelta actividades, asigna responsables y define horarios fácilmente.
+- Integra recordatorios automáticos y alertas para fechas importantes.
 
-- Plataforma centralizada para organización de eventos.
-- Herramientas de planificación, cronogramas y seguimiento de tareas.
-- Módulo de pagos y seguimiento financiero.
-- Sistema de tickets con beneficios, recompensas y descuentos.
-- Explorador de eventos por comunidad e intereses.
+### ✅ Gestión de Tareas Inteligente
+- Crea listas de tareas con responsables y fechas límite.
+- Utiliza el sistema “semáforo” para visualizar la urgencia de cada actividad (verde, amarillo, rojo).
+- Marca avances, recibe notificaciones y mantén al equipo alineado.
 
-## 🎯 Objetivos SMART
+### 💸 Panel Financiero Avanzado
+- Controla ingresos, egresos y presupuesto en tiempo real.
+- Establece metas financieras y monitorea el desempeño de cada evento.
+- Visualiza reportes de rentabilidad y balance general con gráficos interactivos.
 
-- Alcanzar 100 usuarios activos mensuales en los próximos 6 meses.
-- Lograr al menos 20 eventos organizados mediante Lynk en el mismo período.
-- Aumentar un 40% la asistencia a eventos comunitarios en un año.
+### 🏷️ Sistema de Tickets y Recompensas
+- Emite y gestiona entradas digitales para eventos.
+- Implementa beneficios exclusivos, recompensas y descuentos para usuarios frecuentes.
+- Controla el acceso con validaciones automáticas.
 
-## 🧪 Investigación de Mercado
+### 🔍 Explorador de Eventos Potente
+- Busca, filtra y descubre eventos según intereses, ubicación, fecha o comunidad.
+- Visualiza detalles, comparte en redes sociales e inscríbete con un solo clic.
+- Recibe sugerencias personalizadas basadas en tu historial.
 
-Se realizó una entrevista a una coordinadora de eventos del Centro Hebreo Iona para comprender necesidades reales del sector. Algunas conclusiones:
+### 🛠️ Recomendación de Proveedores
+- Accede a una base de proveedores recomendados (DJs, catering, locaciones, etc.).
+- Filtra por tipo de servicio, reseñas y disponibilidad.
+- Solicita presupuestos y contacta proveedores desde la misma plataforma.
 
-- Las herramientas actuales (Excel, WhatsApp, Google Forms) son útiles pero dispersas.
-- Se necesita una plataforma que centralice tareas, comunicación y finanzas.
-- Hay demanda por funcionalidades como:
-  - Sistema de tareas con alerta visual por urgencia.
-  - Recomendaciones de proveedores.
-  - Indicador de rentabilidad.
-  - Recaudación y metas en tiempo real.
+### 📊 Seguimiento en Tiempo Real
+- Monitorea recaudación, asistencia y cumplimiento de metas de manera instantánea.
+- Exporta datos y reportes para análisis avanzado.
 
-También se analizaron plataformas similares: **Passline**, **Apple Invites**, y **Eventool**, comparando ventajas, desventajas y funcionalidades.
+### 💬 Comunicación Centralizada
+- Utiliza chats y foros internos para mantener al equipo y asistentes informados.
+- Envía notificaciones masivas y recordatorios automáticos.
+- Centraliza toda la comunicación relevante en un solo canal.
 
-## 📱 Funcionalidades Clave
+---
 
-- Planificación visual con agenda interactiva.
-- Gestión de tareas con alertas (semáforo de urgencia).
-- Panel financiero con ingresos, egresos y metas.
-- Recomendación de proveedores (DJs, catering, etc.).
-- Sistema de tickets y recompensas para usuarios frecuentes.
-- Explorador de eventos con filtros personalizados.
+## 🎯 ¿Por qué elegir Lynk?
 
-## 🌍 Visión y Misión
+- **Centralización Total:** Olvida las hojas de cálculo dispersas y los múltiples chats. Todo está en Lynk.
+- **Ahorro de Tiempo:** Automatiza tareas repetitivas y minimiza errores administrativos.
+- **Escalabilidad:** Desde pequeños encuentros hasta grandes conferencias, Lynk se adapta a tus necesidades.
+- **Impulso a la Participación:** Herramientas de promoción y recompensas que aumentan la motivación y asistencia.
+- **Análisis y Aprendizaje:** Obtén métricas clave para mejorar tus próximos eventos.
 
-- **Misión:** Desarrollar y ofrecer una plataforma que permita planificar eventos de forma eficiente y accesible.
-- **Visión:** Ser la app líder a nivel global en gestión de eventos, promoviendo inclusión y participación activa.
-- **Valores:** Proactividad, alcance, conectividad.
+---
 
-## 🧠 Equipo de trabajo
+## 🧑‍💻 Casos de Uso
+
+- Organización de conferencias, talleres, fiestas y eventos corporativos.
+- Seguimiento de inscripciones y control de acceso en tiempo real.
+- Gestión de equipos de trabajo y proveedores externos.
+- Promoción de eventos a comunidades específicas o abiertas.
+
+---
+
+## 👥 Equipo de trabajo
 
 Desarrollado por estudiantes de Proyecto Final – Escuela ORT Almagro:
 
@@ -61,4 +78,3 @@ Desarrollado por estudiantes de Proyecto Final – Escuela ORT Almagro:
 ---
 
 **Slogan:** *Eventos que conectan*
-
