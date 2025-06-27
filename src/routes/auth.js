@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../database/pgClient.js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -10,7 +11,6 @@ router.post('/login', async (req, res) => {
   if (!email || !contraseña) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
-
   try {
     const result = await pool.query(
       'SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1', [email]
@@ -21,20 +21,18 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const isPasswordValid = await bcrypt.compare(contraseña, user.contraseña);
+    const isPasswordValid = await bcrypt.compare(String(contraseña), user.contraseña);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const { id, nombre, apellido, pfp } = user;
 
-    res.cookie('id_user', user.id, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    const payload = { id: user.id, email: user.email };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-    return res.json({ id, nombre, apellido, pfp });
+    res.set('Authorization', `Bearer ${token}`);
+    return res.json({ token });
 
   } catch (err) {
     console.error('PostgreSQL Query Error:', err);
