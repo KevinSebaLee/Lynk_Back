@@ -26,9 +26,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: 'http://localhost:3000',
-    allowedHeaders: ['Authorization', 'Content-Type'],
-    credentials: true,
+    origin: 'http://localhost:3000', // Your frontend URL
+    credentials: true, // Required for cookies
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
 }));
 
 app.use('/', Home);

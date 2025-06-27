@@ -2,16 +2,10 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 
 export function requireAuth(req, res, next) {
-  console.log(req.headers);  // Log all headers to inspect what is being received
+  const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
 
-  const authHeader = req.headers.authorization;
+  console.log(token)
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log(authHeader)  // This will log the `Authorization` header or `null`/`undefined`
-    return res.status(401).json({ error: 'Unauthorized: Missing or malformed Authorization header' });
-  }
-
-  const token = authHeader.split(' ')[1];
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized: Token missing' });
   }
@@ -21,6 +15,6 @@ export function requireAuth(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    return res.status(401).json({ error: 'Unauthorized: Invalid or expired token' });
   }
 }

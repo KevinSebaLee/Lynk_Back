@@ -11,37 +11,49 @@ router.post('/login', async (req, res) => {
   if (!email || !contraseña) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+
   try {
     const result = await pool.query(
-      'SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1', [email]
+      'SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1', 
+      [email]
     );
+    
     const user = result.rows[0];
-
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isPasswordValid = await bcrypt.compare(String(contraseña), user.contraseña);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-
-    const { id, nombre, apellido, pfp } = user;
 
     const payload = { id: user.id, email: user.email };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-    res.set('Authorization', `Bearer ${token}`);
-    return res.json({ token });
+    console.log(token)
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      domain: 'localhost',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    return res.json({ message: 'Logged in successfully!' });
 
   } catch (err) {
-    console.error('PostgreSQL Query Error:', err);
-    res.status(500).json({ error: 'Failed to fetch user to login' });
+    console.error('Error:', err);
+    return res.status(500).json({ error: 'Login failed' });
   }
 });
 
 router.get('/logout', (req, res) => {
-  res.clearCookie('id_user', {
+  res.clearCookie('token', { // Must match the cookie name
+    domain: 'localhost',
+    path: '/',
     httpOnly: true,
     sameSite: 'lax',
     secure: false
