@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
-  const { id_user } = req.cookies ? req.cookies : { id_user: null };
+  const { id } = req.user;
 
   if (!id_user) {
     return res.status(401).json({ error: 'Unauthorized' });

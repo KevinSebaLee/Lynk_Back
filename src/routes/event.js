@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
-  const id_user = req.query.id_user ? parseInt(req.query.id_user) : null;
+  const { id } = req.user;
 
   const baseQuery = `
     SELECT e.*, 

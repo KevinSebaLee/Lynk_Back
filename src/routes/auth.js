@@ -2,6 +2,7 @@ import express from 'express';
 import pool from '../database/pgClient.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
