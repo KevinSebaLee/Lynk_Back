@@ -14,10 +14,10 @@ router.post('/login', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1', 
+      'SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1',
       [email]
     );
-    
+
     const user = result.rows[0];
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -31,18 +31,8 @@ router.post('/login', async (req, res) => {
     const payload = { id: user.id, email: user.email };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-    console.log(token)
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      domain: 'localhost',
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000
-    });
-
-    return res.json({ message: 'Logged in successfully!' });
+    // Send the token in the response body, NOT as a cookie
+    return res.json({ token, message: 'Logged in successfully!' });
 
   } catch (err) {
     console.error('Error:', err);
@@ -50,14 +40,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/logout', (req, res) => {
-  res.clearCookie('token', { // Must match the cookie name
-    domain: 'localhost',
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false
-  });
+router.post('/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
