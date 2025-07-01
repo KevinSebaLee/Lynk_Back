@@ -18,7 +18,7 @@ router.get('/', requireAuth, async (req, res) => {
       LEFT JOIN "Categorias" c ON m.id_categoria = c.id
       LEFT JOIN "TipoMovimientos" tm ON m.id_tipo_movimiento = tm.id
       WHERE m.id_user = $1
-    `, [id_user]);
+    `, [id]);
 
     const cleanedData = result.rows.map(({ id, id_user: uid, id_evento, id_moneda, id_categoria, id_tipo_movimiento, ...rest }) => rest);
 

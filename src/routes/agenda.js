@@ -13,7 +13,7 @@ router.get('/', requireAuth, async (req, res) => {
         FROM "EventosAgendados" ea
         JOIN "Eventos" e ON ea.id_evento = e.id
         WHERE ea.id_user = $1`,
-      [id_user]
+      [id]
     );
 
     res.json(result.rows);

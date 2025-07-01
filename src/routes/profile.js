@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', requireAuth, async (req, res) => {
   const { id } = req.user;
 
-  if (!id_user) {
+  if (!id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -19,7 +19,7 @@ router.get('/', requireAuth, async (req, res) => {
       LEFT JOIN "Planes" pl ON u.id_premium = pl.id
       WHERE u.id = $1
       LIMIT 1
-    `, [id_user]);
+    `, [id]);
 
     res.json(result.rows[0]);
   } catch (err) {

@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', requireAuth, async (req, res) => {
     const { id } = req.user;
 
-    console.log(id_user)
+    console.log(id)
 
     // Adjust the query to join the related tables as needed
     const baseQuery = `
@@ -16,7 +16,7 @@ router.get('/', requireAuth, async (req, res) => {
         LEFT JOIN "Paises" p ON u.id_pais = p.id
         LEFT JOIN "Generos" g ON u.id_genero = g.id
         LEFT JOIN "Planes" pl ON u.id_premium = pl.id
-        ${id_user ? 'WHERE u.id = $1' : ''}
+        ${id ? 'WHERE u.id = $1' : ''}
     `;
 
     try {

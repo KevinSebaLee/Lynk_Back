@@ -14,12 +14,12 @@ router.get('/', requireAuth, async (req, res) => {
     FROM "Eventos" e
     LEFT JOIN "Usuarios" u ON e.id_creador = u.id
     LEFT JOIN "Categorias" c ON e.id_categoria = c.id
-    ${id_user ? 'WHERE e.id_creador = $1' : ''}
+    ${id ? 'WHERE e.id_creador = $1' : ''}
   `;
 
   try {
     const result = id_user
-      ? await pool.query(baseQuery, [id_user])
+      ? await pool.query(baseQuery, [id])
       : await pool.query(baseQuery);
 
     const cleanedData = result.rows.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }) => ({
@@ -38,7 +38,7 @@ router.get('/', requireAuth, async (req, res) => {
 // Schedule event
 router.get('/agendar', requireAuth, async (req, res) => {
   const { id_evento } = req.query;
-  const { id_user } = req.cookies;
+  const { id } = req.user;
 
   if (!id_evento || !id_user) {
     return res.status(400).json({ error: 'Event ID and User ID are required' });
@@ -47,7 +47,7 @@ router.get('/agendar', requireAuth, async (req, res) => {
   try {
     const lookup = await pool.query(
       'SELECT id_evento FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2 LIMIT 1',
-      [id_evento, id_user]
+      [id_evento, id]
     );
     if (lookup.rows[0]) {
       return res.status(409).json({ error: 'Event already registered' });
@@ -55,7 +55,7 @@ router.get('/agendar', requireAuth, async (req, res) => {
 
     await pool.query(
       'INSERT INTO "EventosAgendados" (id_evento, id_user) VALUES ($1, $2)',
-      [id_evento, id_user]
+      [id_evento, id]
     );
 
     return res.status(201).json({ message: 'Event scheduled successfully' });
