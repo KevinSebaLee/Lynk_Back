@@ -25,8 +25,6 @@ router.get('/', requireAuth, async (req, res) => {
       LIMIT 10
     `);
 
-    console.log(result)
-
     res.json({
       user: result.rows[0], 
       eventosRecientes: eventosRecientes.rows
