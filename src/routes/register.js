@@ -20,10 +20,15 @@ router.post('/', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(contraseña, 10);
 
+    const midNombre = Math.floor(nombre.length / 2);
+    const midApellido = Math.floor(apellido.length / 2);
+  
+    const alias = nombre.substring(0, midNombre) + apellido.substring(midApellido);
+
     const insertResult = await pool.query(
-      `INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, nombre, apellido, email`,
-      [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium]
+      `INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, nombre, apellido, email`,
+      [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium, alias]
     );
 
     res.status(201).json({ user: insertResult.rows[0] });
