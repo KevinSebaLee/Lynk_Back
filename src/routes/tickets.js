@@ -14,7 +14,7 @@ router.get('/', requireAuth, async (req, res) => {
       SELECT m.*, u.tickets, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
       FROM "Movimientos" m
       LEFT JOIN "Usuarios" u ON m.id_user = u.id
-      LEFT JOIN "Productos" p ON p.id = m.id_producto -- Assuming the correct foreign key is id_producto
+      LEFT JOIN "Productos" p ON p.id = m.id_producto
       LEFT JOIN "Eventos" e ON p.id_evento = e.id
       LEFT JOIN "Monedas" mo ON m.id_moneda = mo.id
       LEFT JOIN "Categorias" c ON m.id_categoria = c.id
@@ -77,39 +77,50 @@ router.get('/transferir', requireAuth, async(req, res) => {
   }
 })
 
-router.put('/transferir/', requireAuth, async(req, res) => {
+router.post('/transferir/', requireAuth, async(req, res) => {
   const {senderId, tickets, receiverId} = req.body
   
   try{
     const getReceiverUser = await pool.query(
       'SELECT tickets FROM "Usuarios" WHERE id = $1 LIMIT 1',
-      [senderId]
+      [receiverId]
     )
 
     const getSenderUser = await pool.query(
       'SELECT tickets FROM "Usuarios" WHERE id = $1 LIMIT 1',
-      [receiverId]
+      [senderId]
     )
+
+    const userReceiver = getReceiverUser.rows[0];
+    const userSender = getSenderUser.rows[0];
     
     if (getSenderUser.rows[0].tickets < tickets) {
+      console.error('Insufficient tickets for transfer' + getSenderUser.rows[0].tickets);
       return res.status(400).json({ error: 'Insufficient tickets' });
     }
 
-    const ticketsReceiverUser = getReceiverUser.rows[0].tickets + tickets
+    const ticketsReceiverUser = userReceiver.tickets + tickets
+    const ticketsSenderUsers = userSender.tickets - tickets
 
     const enviarTickets = await pool.query(
       'UPDATE "Usuarios" SET tickets = $1 WHERE id = $2',
-      [ticketsReceiverUser, senderId]
+      [ticketsSenderUsers, senderId]
     );
 
-    console.log(getSenderUser.rows[0])
-
-    const ticketsSenderUsers = getSenderUser.rows[0].tickets - tickets
-
     const restarTickets = await pool.query(
-      'UPDATE "Usuarios" SET tickets = tickets - $1 WHERE id = $2',
-      [ticketsSenderUsers, receiverId]
+      'UPDATE "Usuarios" SET tickets = $1 WHERE id = $2',
+      [ticketsReceiverUser, receiverId]
     )
+
+    const guardarMovimientoSender = await pool.query(
+      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto) VALUES ($1, $2, $3, $4, $5, $6)',
+      [senderId, null, 173, 2, 2, tickets]
+    );
+
+    const guardarMovimientoReceiver = await pool.query(
+      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto) VALUES ($1, $2, $3, $4, $5, $6)',
+      [receiverId, null, 173, 2, 2, -(tickets)]
+    );
 
     res.json({
       message: 'TIckets transfered successfully',
