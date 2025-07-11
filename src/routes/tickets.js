@@ -7,11 +7,9 @@ const router = express.Router();
 router.get('/', requireAuth, async (req, res) => {
   const { id } = req.user;
 
-  console.log(id)
-
   try {
     const result = await pool.query(`
-      SELECT m.*, u.tickets, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
+      SELECT m.*, u.tickets as tickets, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
       FROM "Movimientos" m
       LEFT JOIN "Usuarios" u ON m.id_user = u.id
       LEFT JOIN "Productos" p ON p.id = m.id_producto
@@ -22,9 +20,7 @@ router.get('/', requireAuth, async (req, res) => {
       WHERE m.id_user = $1
     `, [id]);
 
-    const cleanedData = result.rows.map(({ id_user: uid, id_evento, id_moneda, id_categoria, id_tipo_movimiento, id_producto, ...rest }) => rest);
-
-    res.json(cleanedData);
+    res.json(result.rows);
   } catch (err) {
     console.error('PostgreSQL Query Error:', err);
     res.status(500).json({ error: 'Failed to fetch user data' });
@@ -36,18 +32,17 @@ router.get('/transacciones', requireAuth, async (req, res) => {
 
   try {
     const result = await pool.query(`
-      SELECT m.*, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
-      FROM "Movimientos" m
-      LEFT JOIN "Usuarios" u ON m.id_user = u.id AND u.id = 5
-      LEFT JOIN "Productos" p ON p.id = m.id
-      LEFT JOIN "Eventos" e ON p.id_evento = e.id
-      LEFT JOIN "Monedas" mo ON m.id_moneda = mo.id
-      LEFT JOIN "Categorias" c ON m.id_categoria = c.id
-      LEFT JOIN "TipoMovimientos" tm ON m.id_tipo_movimiento = tm.id
+      SELECT m.*
+      FROM "Usuarios" u
+      JOIN "Movimientos" m ON u.id = m.id_user
       WHERE m.id_user = $1
+      LIMIT 5
     `, [id]);
-  } catch (err) {
 
+    res.json(result.rows);
+  } catch (err) {
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
   }
 });
 
@@ -82,12 +77,12 @@ router.post('/transferir/', requireAuth, async(req, res) => {
   
   try{
     const getReceiverUser = await pool.query(
-      'SELECT tickets FROM "Usuarios" WHERE id = $1 LIMIT 1',
+      'SELECT nombre, tickets FROM "Usuarios" WHERE id = $1 LIMIT 1',
       [receiverId]
     )
 
     const getSenderUser = await pool.query(
-      'SELECT tickets FROM "Usuarios" WHERE id = $1 LIMIT 1',
+      'SELECT nombre, tickets FROM "Usuarios" WHERE id = $1 LIMIT 1',
       [senderId]
     )
 
@@ -112,14 +107,16 @@ router.post('/transferir/', requireAuth, async(req, res) => {
       [ticketsReceiverUser, receiverId]
     )
 
+    console.log('Tickets updated successfully', userReceiver.nombre, userSender.nombre);
+
     const guardarMovimientoSender = await pool.query(
-      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto) VALUES ($1, $2, $3, $4, $5, $6)',
-      [senderId, null, 173, 2, 2, tickets]
+      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [senderId, null, 173, 2, 2, tickets, userReceiver.nombre]
     );
 
     const guardarMovimientoReceiver = await pool.query(
-      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto) VALUES ($1, $2, $3, $4, $5, $6)',
-      [receiverId, null, 173, 2, 2, -(tickets)]
+      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [receiverId, null, 173, 2, 2, -(tickets), userSender.nombre]
     );
 
     res.json({
