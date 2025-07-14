@@ -6,8 +6,6 @@ import req from 'express/lib/request.js';
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
-  const { id } = req.user;
-
   const baseQuery = `
     SELECT e.*, 
       u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, u.pfp AS usuario_pfp,
@@ -15,13 +13,10 @@ router.get('/', requireAuth, async (req, res) => {
     FROM "Eventos" e
     LEFT JOIN "Usuarios" u ON e.id_creador = u.id
     LEFT JOIN "Categorias" c ON e.id_categoria = c.id
-    ${id ? 'WHERE e.id_creador = $1' : ''}
   `;
 
   try {
-    const result = id_user
-      ? await pool.query(baseQuery, [id])
-      : await pool.query(baseQuery);
+    const result = await pool.query(baseQuery);
 
     const cleanedData = result.rows.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }) => ({
       ...rest,
