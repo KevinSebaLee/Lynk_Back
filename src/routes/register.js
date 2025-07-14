@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-  const { nombre, apellido, email, contraseña, id_pais, id_genero, id_premium } = req.body;
+  const { nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, esEmpresa, cuil, telefono, direccion } = req.body;
 
   if (!nombre || !apellido || !email || !contraseña) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -25,11 +25,20 @@ router.post('/', async (req, res) => {
   
     const alias = nombre.substring(0, midNombre) + apellido.substring(midApellido);
 
+
     const insertResult = await pool.query(
       `INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias, tickets)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, nombre, apellido, email`,
-      [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium, alias, 0]
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, nombre, apellido, email`,
+      [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium, alias, 0, esEmpresa]
     );
+
+    if( esEmpresa ) {
+      await pool.query(
+        `INSERT INTO "Empresas" (id_usuario, cuil, telefono, direccion) 
+         VALUES ($1, $2, $3, $4)`,
+        [insertResult.rows[0].id, cuil, telefono, direccion]
+      );
+    }
 
     const userId = insertResult.rows[0].id;
     
