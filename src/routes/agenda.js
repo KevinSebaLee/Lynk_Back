@@ -9,7 +9,7 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT e.nombre, e.descripcion, e.fecha, e.ubicacion, e.color, e.imagen
+      `SELECT e.id, e.nombre, e.descripcion, e.fecha, e.ubicacion, e.color, e.imagen
         FROM "EventosAgendados" ea
         JOIN "Eventos" e ON ea.id_evento = e.id
         WHERE ea.id_user = $1`,

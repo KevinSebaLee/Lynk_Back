@@ -47,37 +47,8 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
-  const { id } = req.params;
-
-  const baseQuery = `
-    SELECT e.*, 
-      u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, u.pfp AS usuario_pfp,
-      c.nombre AS categoria_nombre
-    FROM "Eventos" e
-    LEFT JOIN "Usuarios" u ON e.id_creador = u.id
-    LEFT JOIN "Categorias" c ON e.id_categoria = c.id
-    WHERE e.id_creador = $1
-  `;
-
-  try {
-    const result = await pool.query(baseQuery, [id]);
-
-    const cleanedData = result.rows.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }) => ({
-      ...rest,
-      presupuesto: presupuesto?.toLocaleString(),
-      objetivo: objetivo?.toLocaleString()
-    }));
-
-    res.json(cleanedData);
-  } catch (err) {
-    console.error('PostgreSQL Query Error:', err);
-    res.status(500).json({ error: 'Failed to fetch events' });
-  }
-});
-
 router.post('/:id/agendar', requireAuth, async (req, res) => {
-  const { id_evento } = req.body;
+  const id_evento = req.params.id;
   const { id } = req.user;
 
   if (!id_evento || !id) {
@@ -103,6 +74,66 @@ router.post('/:id/agendar', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('PostgreSQL Insert Error:', err);
     res.status(500).json({ error: 'Failed to insert event in agenda' });
+  }
+});
+
+router.delete('/:id/agendar', requireAuth, async (req, res) => {
+  const id_evento = req.params.id;
+  const { id } = req.user;
+
+  if (!id_evento || !id) {
+    return res.status(400).json({ error: 'Event ID and User ID are required' });
+  }
+
+  try {
+    const lookup = await pool.query(
+      'SELECT id_evento FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2 LIMIT 1',
+      [id_evento, id]
+    );
+    if (lookup.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found in user agenda' });
+    }
+
+    await pool.query(
+      'DELETE FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2',
+      [id_evento, id]
+    );
+
+    return res.status(200).json({ message: 'Event removed from agenda successfully' });
+  } catch (err) {
+    console.error('PostgreSQL Delete Error:', err);
+    res.status(500).json({ error: 'Failed to remove event from agenda' });
+  }
+});
+
+router.get('/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+
+  const baseQuery = `
+    SELECT e.*, 
+      u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, u.pfp AS usuario_pfp,
+      c.nombre AS categoria_nombre
+    FROM "Eventos" e
+    LEFT JOIN "Usuarios" u ON e.id_creador = u.id
+    LEFT JOIN "Categorias" c ON e.id_categoria = c.id
+    WHERE e.id = $1
+  `;
+
+  try {
+    const result = await pool.query(baseQuery, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    const { id_categoria, id_creador, presupuesto, objetivo, ...rest } = result.rows[0];
+    const cleanedData = {
+      ...rest,
+      presupuesto: presupuesto?.toLocaleString(),
+      objetivo: objetivo?.toLocaleString()
+    };
+    res.json(cleanedData);
+  } catch (err) {
+    console.error('PostgreSQL Query Error:', err);
+    res.status(500).json({ error: 'Failed to fetch event' });
   }
 });
 
