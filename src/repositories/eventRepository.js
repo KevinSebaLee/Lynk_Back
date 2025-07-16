@@ -1,4 +1,5 @@
 import pool from '../database/pgClient.js';
+import fs from 'fs/promises';
 
 export const getAllEvents = async () => {
   const baseQuery = `
@@ -7,8 +8,10 @@ export const getAllEvents = async () => {
       c.nombre AS categoria_nombre
     FROM "Eventos" e
     LEFT JOIN "Usuarios" u ON e.id_creador = u.id
-    LEFT JOIN "Categorias" c ON e.id_categoria = c.id
-  `;
+    LEFT JOIN "EventosCategoria" ec ON e.id = ec.id_evento
+    LEFT JOIN "Categorias" c ON ec.id_categoria = c.id
+    ORDER BY e.fecha_creacion DESC`;
+  
   const result = await pool.query(baseQuery);
   return result.rows;
 };
@@ -20,21 +23,40 @@ export const getEventById = async (id) => {
       c.nombre AS categoria_nombre
     FROM "Eventos" e
     LEFT JOIN "Usuarios" u ON e.id_creador = u.id
-    LEFT JOIN "Categorias" c ON e.id_categoria = c.id
+    LEFT JOIN "EventosCategoria" ec ON e.id = ec.id_evento
+    LEFT JOIN "Categorias" c ON ec.id_categoria = c.id
     WHERE e.id = $1
   `;
   const result = await pool.query(baseQuery, [id]);
   return result.rows[0];
 };
 
-export const createEvent = async (eventData) => {
-  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_creador } = eventData;
-  const imagenVerificar = imagen ?? null;
+export const createEvent = async (eventData, id_user) => {
+  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
+
+  let imagenVerificar = null;
+  if(imagen){
+    imagenVerificar = await fs.readFile(imagen);
+  }
 
   await pool.query(
-    'INSERT INTO "Eventos" (id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
-    [id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagenVerificar, id_creador]
+    'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+    [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagenVerificar, id_user]
   );
+
+  const id_evento_result = await pool.query('SELECT id FROM "Eventos" ORDER BY id DESC LIMIT 1');
+  const id_evento = id_evento_result.rows[0]?.id;
+
+  if (!id_categoria || !Array.isArray(id_categoria) || id_categoria.length === 0) {
+    throw new Error('id_categoria must be an array with at least one element');
+  }
+
+  for(let i = 0; i < id_categoria.length; i++) {
+    await pool.query(
+      'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
+      [id_evento, id_categoria[i]]
+    );
+  }
 };
 
 export const checkEventAgendado = async (id_evento, id_user) => {

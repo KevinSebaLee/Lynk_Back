@@ -14,10 +14,13 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 router.post('/', requireAuth, async (req, res) => {
+  const { id } = req.user;
+
   try {
-    await eventService.createEvent(req.body);
+    await eventService.createEvent(req.body, id);
     res.status(201).json({ message: 'Event created successfully' });
   } catch (err) {
+    console.error('Event Route Error:', err);
     res.status(500).json({ error: 'Failed to create event' });
   }
 });

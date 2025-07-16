@@ -20,8 +20,8 @@ export const getEvent = async (id) => {
   };
 };
 
-export const createEvent = async (eventData) => {
-  await eventRepository.createEvent(eventData);
+export const createEvent = async (eventData, id_user) => {
+  await eventRepository.createEvent(eventData, id_user);
 };
 
 export const agendarEvent = async (id_evento, id_user) => {
