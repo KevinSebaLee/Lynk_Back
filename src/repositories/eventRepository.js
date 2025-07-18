@@ -35,8 +35,11 @@ export const createEvent = async (eventData, id_user) => {
   const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
 
   let imagenVerificar = null;
+
   if(imagen){
     imagenVerificar = await fs.readFile(imagen);
+  } else {
+    throw new Error('Image is null');
   }
 
   await pool.query(
@@ -47,15 +50,16 @@ export const createEvent = async (eventData, id_user) => {
   const id_evento_result = await pool.query('SELECT id FROM "Eventos" ORDER BY id DESC LIMIT 1');
   const id_evento = id_evento_result.rows[0]?.id;
 
-  if (!id_categoria || !Array.isArray(id_categoria) || id_categoria.length === 0) {
-    throw new Error('id_categoria must be an array with at least one element');
-  }
-
-  for(let i = 0; i < id_categoria.length; i++) {
-    await pool.query(
-      'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
-      [id_evento, id_categoria[i]]
-    );
+  if (id_categoria != null) {
+    if (!Array.isArray(id_categoria) || id_categoria.length === 0) {
+      throw new Error('id_categoria must be an array with at least one element');
+    }
+    for (let i = 0; i < id_categoria.length; i++) {
+      await pool.query(
+        'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
+        [id_evento, id_categoria[i]]
+      );
+    }
   }
 };
 

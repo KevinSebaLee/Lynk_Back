@@ -30,6 +30,8 @@
     "fs": "^0.0.1-security",
     "https-proxy-agent": "^7.0.6",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "path": "^0.12.7",
     "pg": "^8.16.0",
     "postgres": "^3.4.7"
   },

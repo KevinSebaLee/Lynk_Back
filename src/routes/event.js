@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import * as eventService from '../services/eventService.js';
+import upload from '../middleware/multer.js';
 
 const router = express.Router();
 
@@ -13,18 +14,20 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
   const { id } = req.user;
-
   try {
-    await eventService.createEvent(req.body, id);
+    const eventData = {
+      ...req.body,
+      imagen: req.file ? req.file.path : null,
+    };
+    await eventService.createEvent(eventData, id);
     res.status(201).json({ message: 'Event created successfully' });
   } catch (err) {
     console.error('Event Route Error:', err);
     res.status(500).json({ error: 'Failed to create event' });
   }
 });
-
 router.post('/:id/agendar', requireAuth, async (req, res) => {
   try {
     await eventService.agendarEvent(req.params.id, req.user.id);
