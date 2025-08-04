@@ -9,6 +9,7 @@ export const getUsers = async (id) => {
     LEFT JOIN "Planes" pl ON u.id_premium = pl.id
     ${id ? 'WHERE u.id = $1' : ''}
   `;
+  
   const result = id
     ? await pool.query(baseQuery, [id])
     : await pool.query(baseQuery);

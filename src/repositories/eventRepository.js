@@ -38,8 +38,6 @@ export const createEvent = async (eventData, id_user) => {
 
   if(imagen){
     imagenVerificar = await fs.readFile(imagen);
-  } else {
-    throw new Error('Image is null');
   }
 
   await pool.query(

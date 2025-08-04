@@ -8,8 +8,8 @@ export const login = async (email, contraseña) => {
   const isPasswordValid = await authRepository.comparePassword(contraseña, user.contraseña);
   if (!isPasswordValid) throw new Error('Invalid credentials');
 
-  const payload = { id: user.id, email: user.email };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+  const payload = { id: user.id, email: user.email, nombre: user.nombre, pfp: user.pfp };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
   
   return { token };
 };
