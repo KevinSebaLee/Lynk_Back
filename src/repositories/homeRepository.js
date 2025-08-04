@@ -13,7 +13,7 @@ export const getHomeData = async (id) => {
     SELECT *
     FROM "Eventos" e
     ORDER BY e.fecha_creacion
-    LIMIT 10
+    LIMIT 5
   `);
 
   const eventosUsuario = await pool.query(`
@@ -21,7 +21,6 @@ export const getHomeData = async (id) => {
     FROM "Eventos" e
     WHERE e.id_creador = $1
     ORDER BY e.fecha DESC
-    LIMIT 5
   `, [id]);
 
   return {

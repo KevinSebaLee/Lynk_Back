@@ -28,6 +28,7 @@ router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
     res.status(500).json({ error: 'Failed to create event' });
   }
 });
+
 router.post('/:id/agendar', requireAuth, async (req, res) => {
   try {
     await eventService.agendarEvent(req.params.id, req.user.id);
