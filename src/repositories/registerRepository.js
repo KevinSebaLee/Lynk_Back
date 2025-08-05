@@ -13,13 +13,13 @@ export const registerUser = async (userData) => {
   const alias = nombre.substring(0, midNombre) + apellido.substring(midApellido);
 
   const insertResult = await pool.query(
-    `INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias, tickets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0) RETURNING id, nombre, apellido, email`,
+    'INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias, tickets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0) RETURNING id, nombre, apellido, email',
     [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium, alias]
   );
 
   if (esEmpresa) {
     await pool.query(
-      `INSERT INTO "Empresas" (id_usuario, cuil, telefono, direccion) VALUES ($1, $2, $3, $4)`,
+      'INSERT INTO "Empresas" (id_usuario, cuil, telefono, direccion) VALUES ($1, $2, $3, $4)',
       [insertResult.rows[0].id, cuil, telefono, direccion]
     );
   }

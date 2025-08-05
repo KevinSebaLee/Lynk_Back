@@ -1,6 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import cors from 'cors'
+import cors from 'cors';
 
 // Import route modules
 import Usuarios from './routes/users.js';
@@ -35,11 +35,11 @@ app.use('/', Home);
 app.use('/usuarios', Usuarios);
 app.use('/tickets', Tickets);
 app.use('/perfil', Perfil);
-app.use('/register', Registrar)
+app.use('/register', Registrar);
 app.use('/eventos', Eventos);
 app.use('/agenda', Agenda);
 app.use('/auth', Auth);
-app.use('/test-connection', Test)
+app.use('/test-connection', Test);
 
 app.use(errorHandler);
 

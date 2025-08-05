@@ -1,12 +1,22 @@
-import js from '@eslint/js';
+import eslintRecommended from '@eslint/js';
 
 export default [
-  js.configs.recommended,
   {
-    ignores: ['node_modules/**', 'dist/**'],
+    files: ['**/*.js'], // Apply to all JavaScript files
+    languageOptions: {
+      ecmaVersion: 2021, // Supports ES2021 features
+      sourceType: 'module', // Enables ES modules
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
     rules: {
-      'quotes': ['error', 'single'],
-      'semi': ['error', 'always'],
+      ...eslintRecommended.rules, // Extend recommended rules
+      'no-undef': 'off', // Disable undefined variable errors for `process` and `console`
+      'no-unused-vars': ['warn', { args: 'none' }], // Warn for unused variables
+      'quotes': ['error', 'single'], // Enforce single quotes
+      'semi': ['error', 'always'], // Enforce semicolons
     },
   },
 ];
