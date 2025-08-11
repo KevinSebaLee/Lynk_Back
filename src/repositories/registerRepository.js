@@ -7,7 +7,7 @@ export const registerUser = async (userData) => {
   const existing = await pool.query('SELECT id FROM "Usuarios" WHERE email = $1', [email]);
   if (existing.rows.length > 0) throw new Error('Email already registered');
 
-  console.log(esEmpresa);
+  console.log('Registering user with esEmpresa:', esEmpresa);
 
   const hashedPassword = await bcrypt.hash(contraseña, 10);
   const midNombre = Math.floor(nombre.length / 2);
@@ -16,7 +16,7 @@ export const registerUser = async (userData) => {
   const alias = apellido ? nombre.substring(0, midNombre) + apellido.substring(midApellido) : nombre;
 
   const insertResult = await pool.query(
-    'INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias, tickets, "esEmpresa") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9) RETURNING id, nombre, apellido, email',
+    'INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias, tickets, "esEmpresa") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9) RETURNING id, nombre, apellido, email, "esEmpresa"',
     [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium, alias, !!esEmpresa]
   );
 
