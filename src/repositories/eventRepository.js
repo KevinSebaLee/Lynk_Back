@@ -1,6 +1,68 @@
 import pool from '../database/pgClient.js';
-import fs from 'fs/promises';
 
+export const createEvent = async (eventData, id_user) => {
+  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
+
+  try {
+    // Start a transaction
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Insert event without image first
+      const insertResult = await client.query(
+        'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
+        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_user]
+      );
+      
+      const id_evento = insertResult.rows[0]?.id;
+      
+      // Now handle categories
+      if (id_categoria) {
+        try {
+          // Parse the JSON string if it's a string
+          const categoriesArray = typeof id_categoria === 'string' 
+            ? JSON.parse(id_categoria) 
+            : id_categoria;
+          
+          if (Array.isArray(categoriesArray) && categoriesArray.length > 0) {
+            for (let i = 0; i < categoriesArray.length; i++) {
+              await client.query(
+                'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
+                [id_evento, categoriesArray[i]]
+              );
+            }
+          }
+        } catch (error) {
+          console.error('Error processing categories:', error);
+          // Continue execution even if categories fail
+        }
+      }
+      
+      // If we have an image, update the event record with the image
+      if (imagen) {
+        await client.query(
+          'UPDATE "Eventos" SET imagen = $1 WHERE id = $2',
+          [imagen, id_evento]
+        );
+      }
+      
+      await client.query('COMMIT');
+      return id_evento;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Database error in createEvent:', error);
+    throw error;
+  }
+};
+
+// Keep the rest of the functions unchanged
 export const getAllEvents = async () => {
   const baseQuery = `
     SELECT e.*, 
@@ -29,36 +91,6 @@ export const getEventById = async (id) => {
   `;
   const result = await pool.query(baseQuery, [id]);
   return result.rows[0];
-};
-
-export const createEvent = async (eventData, id_user) => {
-  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
-
-  let imagenVerificar = null;
-
-  if(imagen){
-    imagenVerificar = await fs.readFile(imagen);
-  }
-
-  await pool.query(
-    'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-    [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagenVerificar, id_user]
-  );
-
-  const id_evento_result = await pool.query('SELECT id FROM "Eventos" ORDER BY id DESC LIMIT 1');
-  const id_evento = id_evento_result.rows[0]?.id;
-
-  if (id_categoria != null) {
-    if (!Array.isArray(id_categoria) || id_categoria.length === 0) {
-      throw new Error('id_categoria must be an array with at least one element');
-    }
-    for (let i = 0; i < id_categoria.length; i++) {
-      await pool.query(
-        'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
-        [id_evento, id_categoria[i]]
-      );
-    }
-  }
 };
 
 export const checkEventAgendado = async (id_evento, id_user) => {
