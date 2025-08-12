@@ -1,3 +1,3 @@
-import * as profileRepository from '../repositories/profileRepository.js';
+import ProfileRepository from '../repositories/profileRepository.js';
 
-export const getProfile = async (id) => profileRepository.getProfile(id);
+export const getProfile = async (id) => ProfileRepository.getProfile(id);

@@ -1,3 +1,3 @@
-import * as agendaRepository from '../repositories/agendaRepository.js';
+import AgendaRepository from '../repositories/agendaRepository.js';
 
-export const getAgenda = async (id_user) => agendaRepository.getAgenda(id_user);
+export const getAgenda = async (id_user) => AgendaRepository.getAgenda(id_user);

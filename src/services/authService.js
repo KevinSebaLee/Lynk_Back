@@ -1,11 +1,11 @@
-import * as authRepository from '../repositories/authRepository.js';
+import AuthRepository from '../repositories/authRepository.js';
 import jwt from 'jsonwebtoken';
 
 export const login = async (email, contraseña) => {
-  const user = await authRepository.findUserByEmail(email);
+  const user = await AuthRepository.findUserByEmail(email);
   if (!user) throw new Error('Invalid credentials');
 
-  const isPasswordValid = await authRepository.comparePassword(contraseña, user.contraseña);
+  const isPasswordValid = await AuthRepository.comparePassword(contraseña, user.contraseña);
   if (!isPasswordValid) throw new Error('Invalid credentials');
 
   const payload = { id: user.id, email: user.email, nombre: user.nombre, pfp: user.pfp, esEmpresa: user.esEmpresa };

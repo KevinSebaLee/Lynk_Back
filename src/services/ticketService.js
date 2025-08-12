@@ -1,7 +1,7 @@
-import * as ticketRepository from '../repositories/ticketRepository.js';
+import TicketRepository from '../repositories/ticketRepository.js';
 
-export const getMovimientos = async (id) => ticketRepository.getMovimientos(id);
-export const getTransacciones = async (id) => ticketRepository.getTransacciones(id);
-export const getCupones = async (id) => ticketRepository.getCupones(id);
-export const getTransferUsers = async () => ticketRepository.getTransferUsers();
-export const transferTickets = async (data) => ticketRepository.transferTickets(data);
+export const getMovimientos = async (id) => TicketRepository.getMovimientos(id);
+export const getTransacciones = async (id) => TicketRepository.getTransacciones(id);
+export const getCupones = async (id) => TicketRepository.getCupones(id);
+export const getTransferUsers = async () => TicketRepository.getTransferUsers();
+export const transferTickets = async (data) => TicketRepository.transferTickets(data);

@@ -1,7 +1,7 @@
-import * as eventRepository from '../repositories/eventRepository.js';
+import EventRepository from '../repositories/eventRepository.js';
 
 export const getEvents = async () => {
-  const rows = await eventRepository.getAllEvents();
+  const rows = await EventRepository.getAllEvents();
   return rows.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }) => {
     let imagenBase64 = null;
     if (rest.imagen) {
@@ -20,7 +20,7 @@ export const getEvents = async () => {
 };
 
 export const getEvent = async (id) => {
-  const event = await eventRepository.getEventById(id);
+  const event = await EventRepository.getEventById(id);
   if (!event) return null;
   
   const { id_categoria, id_creador, presupuesto, objetivo, ...rest } = event;
@@ -56,7 +56,7 @@ export const createEvent = async (eventData, id_user) => {
       eventData.visibilidad = 0;
     }
     
-    return await eventRepository.createEvent(eventData, id_user);
+    return await EventRepository.createEvent(eventData, id_user);
   } catch (error) {
     console.error('Error in createEvent service:', error);
     throw error;
@@ -64,13 +64,13 @@ export const createEvent = async (eventData, id_user) => {
 };
 
 export const agendarEvent = async (id_evento, id_user) => {
-  const alreadyAgendado = await eventRepository.checkEventAgendado(id_evento, id_user);
+  const alreadyAgendado = await EventRepository.checkEventAgendado(id_evento, id_user);
   if (alreadyAgendado) throw new Error('Event already registered');
-  await eventRepository.addEventToAgenda(id_evento, id_user);
+  await EventRepository.addEventToAgenda(id_evento, id_user);
 };
 
 export const removeAgendadoEvent = async (id_evento, id_user) => {
-  const alreadyAgendado = await eventRepository.checkEventAgendado(id_evento, id_user);
+  const alreadyAgendado = await EventRepository.checkEventAgendado(id_evento, id_user);
   if (!alreadyAgendado) throw new Error('Event not found in user agenda');
-  await eventRepository.removeEventFromAgenda(id_evento, id_user);
+  await EventRepository.removeEventFromAgenda(id_evento, id_user);
 };
