@@ -1,6 +1,17 @@
 import multer from 'multer';
 
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, res, cb) => {
+    const id = req.params.id
+    const dir = path.join(process.cwd(), 'uploads')
+
+    fs.mkdirSync(dir, { recursive: true })
+    cb(null, dir)
+  }, filename: (req, res, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg'
+    cb(null, 'photo' + ext)
+  }
+})
 
 const fileFilter = (req, file, cb) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
@@ -17,4 +28,4 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-export default upload;
+export default { upload, storage };

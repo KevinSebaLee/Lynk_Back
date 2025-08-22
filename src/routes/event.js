@@ -1,14 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import * as eventService from '../services/eventService.js';
-import multer from 'multer';
-
-// Configure multer for in-memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
+import {upload, storage} from '../middleware/multer.js' 
 
 const router = express.Router();
 
@@ -55,7 +48,45 @@ router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
   }
 });
 
-// Keep other routes the same
+router.put('/:id', requireAuth, async(req, res) => {
+  const id = req.params.id
+  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = req.body
+
+  try{
+    const event = await eventService.updateEvent(id)
+    if(!event){
+      
+    }
+
+    const eventData = [
+      nombre ?? event.nombre,
+      descripcion ?? event.descripcion,
+      fecha ?? event.fecha,
+      ubicacion ?? event.ubicacion,
+      visibilidad ?? event.visibilidad,
+      presupuesto ?? event.presupuesto,
+      objetivo ?? event.objetivo,
+      color ?? event.color,
+      imagen ?? event.imagen,
+      id_categoria ?? event.id_categoria,
+      id
+    ]
+
+    const updatedEvent = await eventService.updateEvent(eventData)
+
+    res.status(201).json({ 
+      message: 'Event updated successfully',
+    });
+
+  }catch(err){
+    console.error(err)
+    res.status(500).json({
+      error: 'Failed to update event',
+      details: err.message
+    })
+  }
+})
+
 router.post('/:id/agendar', requireAuth, async (req, res) => {
   try {
     await eventService.agendarEvent(req.params.id, req.user.id);

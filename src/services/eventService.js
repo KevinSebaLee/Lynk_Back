@@ -40,6 +40,10 @@ export const getEvent = async (id) => {
   };
 };
 
+export const updateEvent = async (eventData) => {
+  return await EventRepository.updateEvent(eventData);
+}; 
+
 export const createEvent = async (eventData, id_user) => {
   try {
     if (eventData.presupuesto && typeof eventData.presupuesto === 'string') {

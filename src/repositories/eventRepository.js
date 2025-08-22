@@ -4,48 +4,51 @@ class EventRepository {
   static async createEvent(eventData, id_user) {
     const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
     try {
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-        const insertResult = await client.query(
-          'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
-          [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_user]
-        );
-        const id_evento = insertResult.rows[0]?.id;
-        if (id_categoria) {
-          try {
-            const categoriesArray = typeof id_categoria === 'string' 
-              ? JSON.parse(id_categoria) 
-              : id_categoria;
-            if (Array.isArray(categoriesArray) && categoriesArray.length > 0) {
-              for (let i = 0; i < categoriesArray.length; i++) {
-                await client.query(
-                  'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
-                  [id_evento, categoriesArray[i]]
-                );
-              }
+      const insertResult = await pool.query(
+        'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
+        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_user]
+      );
+      const id_evento = insertResult.rows[0]?.id;
+      if (id_categoria) {
+        try {
+          const categoriesArray = typeof id_categoria === 'string'
+            ? JSON.parse(id_categoria)
+            : id_categoria;
+          if (Array.isArray(categoriesArray) && categoriesArray.length > 0) {
+            for (let i = 0; i < categoriesArray.length; i++) {
+              await pool.query(
+                'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
+                [id_evento, categoriesArray[i]]
+              );
             }
-          } catch (error) {
-            console.error('Error processing categories:', error);
           }
+        } catch (error) {
+          console.error('Error processing categories:', error);
         }
-        if (imagen) {
-          await client.query(
-            'UPDATE "Eventos" SET imagen = $1 WHERE id = $2',
-            [imagen, id_evento]
-          );
-        }
-        await client.query('COMMIT');
-        return id_evento;
-      } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-      } finally {
-        client.release();
       }
+      if (imagen) {
+        await pool.query(
+          'UPDATE "Eventos" SET imagen = $1 WHERE id = $2',
+          [imagen, id_evento]
+        );
+      }
+      return id_evento;
+
     } catch (error) {
-      console.error('Database error in createEvent:', error);
-      throw error;
+      throw error
+    }
+  }
+
+  static async updateEvent(eventData) {
+    const { id, id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
+    try {
+      const result = await pool.query(
+        `UPDATE "Eventos" SET nombre = $1, descripcion = $2, fecha = $3, ubicacion = $4, visibilidad = $5, presupuesto = $6, objetivo = $7, color = $8, imagen $9, id_categoria = $10 WHERE id = $11 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_categoria, id]);
+
+        return id
+    } catch(error) {
+      throw error 
     }
   }
 
