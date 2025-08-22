@@ -1,17 +1,19 @@
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const storage = multer.diskStorage({
   destination: (req, res, cb) => {
-    const id = req.params.id
-    const dir = path.join(process.cwd(), 'uploads')
+    const id = req.params.id;
+    const dir = path.join(process.cwd(), 'uploads');
 
-    fs.mkdirSync(dir, { recursive: true })
-    cb(null, dir)
-  }, filename: (req, res, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg'
-    cb(null, 'photo' + ext)
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  }, filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, 'photo' + ext);
   }
-})
+});
 
 const fileFilter = (req, file, cb) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
@@ -20,12 +22,10 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-const upload = multer({
+export const upload = multer({
   storage: storage,
   limits: {
     fileSize: 10 * 1024 * 1024,
   },
   fileFilter: fileFilter
 });
-
-export default { upload, storage };

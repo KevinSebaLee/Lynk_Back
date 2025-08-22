@@ -1,7 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import * as eventService from '../services/eventService.js';
-import {upload, storage} from '../middleware/multer.js' 
+import { upload } from '../middleware/multer.js';
 
 const router = express.Router();
 

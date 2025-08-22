@@ -27,6 +27,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "file": "^0.2.2",
     "fs": "^0.0.1-security",
     "https-proxy-agent": "^7.0.6",
     "jsonwebtoken": "^9.0.2",
