@@ -43,12 +43,14 @@ class EventRepository {
     const { id, id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
     try {
       const result = await pool.query(
-        `UPDATE "Eventos" SET nombre = $1, descripcion = $2, fecha = $3, ubicacion = $4, visibilidad = $5, presupuesto = $6, objetivo = $7, color = $8, imagen $9, id_categoria = $10 WHERE id = $11 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id_categoria, id]);
+        `UPDATE "Eventos" SET nombre = $1, descripcion = $2, fecha = $3, ubicacion = $4, visibilidad = $5, presupuesto = $6, objetivo = $7, color = $8, imagen = $9 WHERE id = $10`,
+        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id]);
 
-        return id
-    } catch(error) {
-      throw error 
+      // FALTAN INSERTAR CATEGORIAS
+
+      return id
+    } catch (error) {
+      throw error
     }
   }
 

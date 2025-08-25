@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
 
 // Import route modules
 import Usuarios from './routes/users.js';
@@ -24,12 +25,12 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: ['http://localhost:3000', 'exp://ukrtnqe-anonymous-8081.exp.direct', 'stirring-intense-sheep.ngrok-free.app'],
-    credentials: true, 
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    sameSite: 'none'
-  }));
+  origin: ['http://localhost:3000', 'exp://ukrtnqe-anonymous-8081.exp.direct', 'stirring-intense-sheep.ngrok-free.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  sameSite: 'none'
+}));
 
 app.use('/', Home);
 app.use('/usuarios', Usuarios);
@@ -40,6 +41,8 @@ app.use('/eventos', Eventos);
 app.use('/agenda', Agenda);
 app.use('/auth', Auth);
 app.use('/test-connection', Test);
+
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use(errorHandler);
 

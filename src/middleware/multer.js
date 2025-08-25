@@ -3,15 +3,15 @@ import path from 'path';
 import fs from 'fs';
 
 const storage = multer.diskStorage({
-  destination: (req, res, cb) => {
-    const id = req.params.id;
-    const dir = path.join(process.cwd(), 'uploads');
-
+  destination: (req, file, cb) => {
+    const dir = path.join(process.cwd(), 'uploads/events/tmp');
     fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
-  }, filename: (req, file, cb) => {
+  },
+  filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, 'photo' + ext);
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
+    cb(null, uniqueName);
   }
 });
 
@@ -24,8 +24,6 @@ const fileFilter = (req, file, cb) => {
 
 export const upload = multer({
   storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024,
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: fileFilter
 });
