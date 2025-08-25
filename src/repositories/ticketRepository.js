@@ -37,7 +37,7 @@ class TicketRepository {
     return result.rows;
   }
 
-  static async transferTickets({ senderId, tickets, receiverId }) {
+  static async transferTickets({ senderId, tickets, receiverId, date, userSenderName, userReceiverName }) {
     const sender = await pool.query('SELECT tickets FROM "Usuarios" WHERE id = $1', [senderId]);
     if (sender.rows[0].tickets < tickets) throw new Error('Insufficient tickets');
 
@@ -45,12 +45,12 @@ class TicketRepository {
     await pool.query('UPDATE "Usuarios" SET tickets = tickets + $1 WHERE id = $2', [tickets, receiverId]);
 
     await pool.query(
-      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo) VALUES ($1, null, 173, 2, 2, $2, $3)',
-      [senderId, tickets, `Transfer to ${receiverId}`]
+      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
+      [senderId, -tickets, `Transfer to ${userReceiverName}`, date]
     );
     await pool.query(
-      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo) VALUES ($1, null, 173, 2, 2, $2, $3)',
-      [receiverId, -tickets, `Transfer from ${senderId}`]
+      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
+      [receiverId, tickets, `Transfer from ${userSenderName}`, date]
     );
   }
 }

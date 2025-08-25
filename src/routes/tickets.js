@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import * as ticketService from '../services/ticketService.js';
+import * as userService from '../services/userService.js';
 
 const router = express.Router();
 
@@ -49,7 +50,19 @@ router.get('/transferir', requireAuth, async (req, res) => {
 
 router.post('/transferir', requireAuth, async (req, res) => {
   try {
-    await ticketService.transferTickets(req.body);
+    const date = new Date();
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0'); 
+    const yyyy = date.getFullYear();
+
+    const formattedDate = mm + '/' + dd + '/' + yyyy;
+
+    const userReceiver = await userService.getUsers(req.body.receiverId)
+    const userSender = await userService.getUsers(req.body.senderId)
+
+    const dataToSend = { ...req.body, date: formattedDate, userSenderName: userSender[0].nombre, userReceiverName: userReceiver[0].nombre};
+
+    await ticketService.transferTickets(dataToSend);
     res.json({ message: 'Tickets transferred successfully' });
   } catch (err) {
     res.status(400).json({ error: err.message || 'Failed to transfer tickets' });
