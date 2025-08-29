@@ -64,6 +64,12 @@ export const updateEvent = async (eventData) => {
   return await EventRepository.updateEvent(fixedData);
 };
 
+export const deleteEvent = async (id) => {
+  const event = await getEvent(id);
+  if (!event) throw new Error('Event not found');
+  await EventRepository.deleteEvent(id);
+}
+
 export const createEvent = async (eventData, id_user) => {
   try {
     if (eventData.presupuesto && typeof eventData.presupuesto === 'string') {

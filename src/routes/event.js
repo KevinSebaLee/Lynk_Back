@@ -77,6 +77,15 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 })
 
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    await eventService.deleteEvent(req.params.id);
+    res.status(200).json({ message: 'Event deleted successfully' });
+  } catch (err) {
+    res.status(err.message === 'Event not found' ? 404 : 500).json({ error: err.message });
+  }
+})
+
 router.post('/:id/agendar', requireAuth, async (req, res) => {
   try {
     await eventService.agendarEvent(req.params.id, req.user.id);

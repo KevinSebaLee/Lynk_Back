@@ -54,6 +54,18 @@ class EventRepository {
     }
   }
 
+  static async deleteEvent(id) {
+    try {
+      const deleteResult = await pool.query('DELETE FROM "Eventos" WHERE id = $1', [id]);
+      if (deleteResult.rowCount === 0) {
+        throw new Error('Event not found');
+      }
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getAllEvents() {
     const baseQuery = `
       SELECT e.*, 
