@@ -9,7 +9,9 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { id } = req.user;
     const movimientos = await ticketService.getMovimientos(id);
-    res.json(movimientos);
+    const ticketsMonth = await ticketService.getTicketsMonth(id);
+    
+    res.json(movimientos, { ticketsMonth });
   } catch (err) {
     console.error('Tickets Route Error:', err);
     res.status(500).json({ error: 'Failed to fetch user data' });
@@ -19,7 +21,7 @@ router.get('/', requireAuth, async (req, res) => {
 router.get('/transacciones', requireAuth, async (req, res) => {
   try {
     const { id } = req.user;
-    const transacciones = await ticketService.getTransacciones(id);
+    const transacciones = await ticketService.getMovimientos(id);
     res.json(transacciones);
   } catch (err) {
     console.error('Tickets Route Error:', err);
