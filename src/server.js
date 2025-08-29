@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 
 // Import route modules
+
 import Usuarios from './routes/users.js';
 import Tickets from './routes/tickets.js';
 import Home from './routes/index.js';
@@ -12,6 +13,7 @@ import Registrar from './routes/register.js';
 import Eventos from './routes/event.js';
 import Agenda from './routes/agenda.js';
 import Auth from './routes/auth.js';
+import Categories from './routes/categories.js';
 
 import Test from './routes/tests.js';
 
@@ -41,6 +43,7 @@ app.use('/eventos', Eventos);
 app.use('/agenda', Agenda);
 app.use('/auth', Auth);
 app.use('/test-connection', Test);
+app.use('/categories', Categories);
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
