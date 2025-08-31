@@ -10,8 +10,14 @@ router.get('/', requireAuth, async (req, res) => {
     const { id } = req.user;
     const movimientos = await ticketService.getMovimientos(id);
     const ticketsMonth = await ticketService.getTicketsMonth(id);
-    
-    res.json(movimientos, { ticketsMonth });
+
+    const tickets = movimientos[0]?.tickets || 0;
+
+    res.json({
+      tickets,
+      ticketsMonth,
+      movimientos
+    });
   } catch (err) {
     console.error('Tickets Route Error:', err);
     res.status(500).json({ error: 'Failed to fetch user data' });

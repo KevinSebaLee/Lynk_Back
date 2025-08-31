@@ -16,17 +16,24 @@ class TicketRepository {
     return result.rows;
   }
 
-  static async countTicketsMonth(id) {
+  static async countTicketsLast6Months(id) {
     const result = await pool.query(`
-      SELECT -COALESCE(SUM(m.monto), 0) AS total_tickets
+      SELECT 
+        DATE_TRUNC('month', m.fecha_transaccion) AS month,
+        -COALESCE(SUM(m.monto), 0) AS total_tickets
       FROM "Movimientos" m
       WHERE m.id_user = $1
         AND m.monto < 0
-        AND m.fecha_transaccion >= DATE_TRUNC('month', CURRENT_DATE)
-        AND m.fecha_transaccion <  (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month');
+        AND m.fecha_transaccion >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
+        AND m.fecha_transaccion < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')
+      GROUP BY month
+      ORDER BY month ASC;
     `, [id]);
 
-    return result.rows[0].total_tickets
+    return result.rows.map(row => ({
+      month: row.month,
+      total_tickets: row.total_tickets
+    }));
   }
 
   static async getCupones(id) {

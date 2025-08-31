@@ -43,7 +43,7 @@ app.use('/eventos', Eventos);
 app.use('/agenda', Agenda);
 app.use('/auth', Auth);
 app.use('/test-connection', Test);
-app.use('/categories', Categories);
+app.use('/categorias', Categories);
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
