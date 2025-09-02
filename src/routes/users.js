@@ -6,13 +6,11 @@ const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { id } = req.user;
-    const users = await userService.getUsers(id);
+    const users = await userService.getUsers();
     res.json(users);
   } catch (err) {
     console.error('User Route Error:', err);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
-
 export default router;
