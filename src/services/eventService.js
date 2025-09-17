@@ -1,4 +1,89 @@
 import EventRepository from '../repositories/eventRepository.js';
+import { supabaseClient } from '../database/supabase.js';
+import path from 'path';
+
+// Helper function to handle image uploads to Supabase
+const uploadImageToSupabase = async (file, eventId) => {
+  if (!file || !file.buffer || file.buffer.length === 0) {
+    throw new Error('File buffer is empty or invalid');
+  }
+
+  console.log('File received:', {
+    originalname: file.originalname,
+    mimetype: file.mimetype,
+    size: file.size,
+    bufferExists: !!file.buffer
+  });
+
+  const ext = path.extname(file.originalname) || '.jpg';
+  const fileName = `photo${ext}`;
+  const filePath = `event_images/${eventId}/${fileName}`;
+  const BUCKET_NAME = 'event-image';
+
+  console.log(`Uploading to bucket: ${BUCKET_NAME}, path: ${filePath}, file size: ${file.buffer.length} bytes`);
+
+  try {
+    // Upload to Supabase Storage
+    const { data, error } = await supabaseClient.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+        cacheControl: '3600'
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new Error(`Supabase upload failed: ${error.message}`);
+    }
+
+    console.log('Upload successful:', data);
+
+    // Get public URL for the file
+    const { data: urlData } = supabaseClient.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(filePath);
+
+    const imagePath = urlData.publicUrl;
+    console.log('Image URL:', imagePath);
+
+    // Verify the upload is accessible
+    try {
+      const checkResponse = await fetch(imagePath);
+      console.log('File verification response:', checkResponse.status, checkResponse.ok);
+    } catch (verifyError) {
+      console.warn('Warning: Could not verify uploaded file:', verifyError.message);
+    }
+
+    return imagePath;
+  } catch (uploadError) {
+    console.error('Exception during upload:', uploadError);
+    throw uploadError;
+  }
+};
+
+// Helper function to delete image from Supabase
+const deleteImageFromSupabase = async (imageUrl) => {
+  if (!imageUrl) return;
+
+  try {
+    const pathMatch = imageUrl.match(/event_images\/\d+\/[^?]+/);
+    if (pathMatch) {
+      const filePath = pathMatch[0];
+      const { error } = await supabaseClient.storage
+        .from('event-image')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Error deleting file from Supabase:', error);
+      } else {
+        console.log('Successfully deleted image:', filePath);
+      }
+    }
+  } catch (storageError) {
+    console.error('Error deleting image from storage:', storageError);
+  }
+};
 
 export const getEvents = async () => {
   const rows = await EventRepository.getAllEvents();
@@ -44,8 +129,37 @@ export const getEvent = async (id) => {
   };
 };
 
-export const updateEvent = async (eventData) => {
-  const event = await getEvent(eventData.id)
+export const updateEvent = async (eventData, file = null) => {
+  console.log('updateEvent called with:', {
+    id: eventData.id,
+    fields: Object.keys(eventData),
+    hasFile: !!file
+  });
+  
+  // Get existing event to check current state
+  const event = await getEvent(eventData.id);
+  if (!event) {
+    console.error('Event not found for update:', eventData.id);
+    throw new Error('Event not found');
+  }
+
+  let imagePath = event.imagen; // Keep existing image by default
+
+  // Handle new image upload if file is provided
+  if (file) {
+    try {
+      // Delete old image if exists
+      if (event.imagen) {
+        await deleteImageFromSupabase(event.imagen);
+      }
+
+      // Upload new image
+      imagePath = await uploadImageToSupabase(file, eventData.id);
+    } catch (storageError) {
+      console.error('Storage operation failed during update:', storageError);
+      // Continue with event update even if image upload fails
+    }
+  }
 
   const fixedData = {
     id: eventData.id,
@@ -58,26 +172,41 @@ export const updateEvent = async (eventData) => {
     presupuesto: eventData.presupuesto ?? event.presupuesto,
     objetivo: eventData.objetivo ?? event.objetivo,
     color: eventData.color ?? event.color,
-    imagen: eventData.imagen ?? event.imagen
+    imagen: imagePath
   };
 
+  console.log('Performing update with merged data');
   return await EventRepository.updateEvent(fixedData);
 };
 
 export const deleteEvent = async (id) => {
   const event = await getEvent(id);
   if (!event) throw new Error('Event not found');
+  
+  // Delete the image from Supabase storage if it exists
+  if (event.imagen) {
+    await deleteImageFromSupabase(event.imagen);
+  }
+  
   await EventRepository.deleteEvent(id);
 }
 
-export const createEvent = async (eventData, id_user) => {
+export const createEvent = async (eventData, id_user, file = null) => {
   try {
-    if (eventData.presupuesto && typeof eventData.presupuesto === 'string') {
-      eventData.presupuesto = parseInt(eventData.presupuesto, 10) || 0;
+    // For presupuesto: handle empty string, convert to number if string, or keep as is
+    if (eventData.presupuesto === '') {
+      eventData.presupuesto = null;
+    } else if (typeof eventData.presupuesto === 'string') {
+      const parsed = parseFloat(eventData.presupuesto);
+      eventData.presupuesto = isNaN(parsed) ? null : parsed;
     }
-
-    if (eventData.objetivo && typeof eventData.objetivo === 'string') {
-      eventData.objetivo = parseInt(eventData.objetivo, 10) || 0;
+    
+    // For objetivo: handle empty string, convert to number if string, or keep as is  
+    if (eventData.objetivo === '') {
+      eventData.objetivo = null;
+    } else if (typeof eventData.objetivo === 'string') {
+      const parsed = parseFloat(eventData.objetivo);
+      eventData.objetivo = isNaN(parsed) ? null : parsed;
     }
 
     if (eventData.visibilidad === 'true' || eventData.visibilidad === '1') {
@@ -86,7 +215,24 @@ export const createEvent = async (eventData, id_user) => {
       eventData.visibilidad = 0;
     }
 
-    return await EventRepository.createEvent(eventData, id_user);
+    // Create the event first without image
+    const eventId = await EventRepository.createEvent(eventData, id_user);
+    
+    let imagePath = null;
+    
+    // Handle image upload if file is provided
+    if (file) {
+      try {
+        imagePath = await uploadImageToSupabase(file, eventId);
+        // Update the event with the image path
+        await EventRepository.updateEvent({ id: eventId, imagen: imagePath });
+      } catch (storageError) {
+        console.error('Storage operation failed:', storageError);
+        // Continue with event creation even if image upload fails
+      }
+    }
+
+    return { eventId, imagePath };
   } catch (error) {
     console.error('Error in createEvent service:', error);
     throw error;

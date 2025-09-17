@@ -44,7 +44,6 @@ app.use('/agenda', Agenda);
 app.use('/auth', Auth);
 app.use('/test-connection', Test);
 app.use('/categorias', Categories);
-
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use(errorHandler);

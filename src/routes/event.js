@@ -3,7 +3,6 @@ import { requireAuth } from '../middleware/auth.js';
 import * as eventService from '../services/eventService.js';
 import { upload } from '../middleware/multer.js';
 import path from 'path';
-import fs from 'fs'; 
 
 const router = express.Router();
 
@@ -20,21 +19,9 @@ router.get('/', requireAuth, async (req, res) => {
 router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
   try {
     const { id } = req.user;
-    const eventData = { ...req.body, imagen: null };
-    const eventId = await eventService.createEvent(eventData, id);
+    const eventData = { ...req.body };
 
-    let imagePath = null;
-
-    if (req.file) {
-      const finalDir = path.join(process.cwd(), 'uploads/events', String(eventId));
-      fs.mkdirSync(finalDir, { recursive: true });
-      const ext = path.extname(req.file.originalname) || '.jpg';
-      const finalPath = path.join(finalDir, 'photo' + ext);
-      fs.renameSync(req.file.path, finalPath);
-      imagePath = `/uploads/events/${eventId}/photo${ext}`;
-
-      await eventService.updateEvent({ id: eventId, imagen: imagePath });
-    }
+    const { eventId, imagePath } = await eventService.createEvent(eventData, id, req.file);
 
     res.status(201).json({ message: 'Event created successfully', eventId, image: imagePath });
   } catch (err) {
@@ -43,12 +30,12 @@ router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, upload.single('imagen'), async (req, res) => {
   const id = req.params.id
-  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = req.body
+  const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color } = req.body
   
   try {
-    const eventData = [
+    const eventData = {
       id,
       id_categoria, 
       nombre, 
@@ -58,22 +45,22 @@ router.put('/:id', requireAuth, async (req, res) => {
       visibilidad, 
       presupuesto, 
       objetivo, 
-      color, 
-      imagen
-    ]
+      color
+    };
   
-    const updatedEvent = await eventService.updateEvent(eventData)
+    // Pass the file to the service for handling
+    const updatedEvent = await eventService.updateEvent(eventData, req.file);
 
-    res.status(201).json({
+    res.status(200).json({
       message: 'Event updated successfully',
     });
 
   } catch (err) {
-    console.error(err)
+    console.error(err);
     res.status(500).json({
       error: 'Failed to update event',
       details: err.message
-    })
+    });
   }
 })
 

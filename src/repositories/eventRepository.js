@@ -3,10 +3,15 @@ import pool from '../database/pgClient.js';
 class EventRepository {
   static async createEvent(eventData, id_user) {
     const { id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
+    
+    // Handle empty strings for numeric fields
+    const parsedPresupuesto = presupuesto === '' ? null : parseFloat(presupuesto) || 0;
+    const parsedObjetivo = objetivo === '' ? null : parseFloat(objetivo) || 0;
+    
     try {
       const insertResult = await pool.query(
         'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
-        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_user]
+        [nombre, descripcion, fecha, ubicacion, visibilidad, parsedPresupuesto, parsedObjetivo, color, id_user]
       );
       const id_evento = insertResult.rows[0]?.id;
       if (id_categoria) {
@@ -41,11 +46,35 @@ class EventRepository {
 
   static async updateEvent(eventData) {
     const { id, id_categoria, nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen } = eventData;
+    
+    console.log('UpdateEvent received data:', {
+      id, 
+      imagen: imagen ? (imagen.substring(0, 50) + '...') : 'null', 
+      fields: Object.keys(eventData)
+    });
+    
+    // Handle empty strings for numeric fields
+    const parsedPresupuesto = presupuesto === '' ? null : parseFloat(presupuesto) || null;
+    const parsedObjetivo = objetivo === '' ? null : parseFloat(objetivo) || null;
+    
     try {
-      const result = await pool.query(
-        `UPDATE "Eventos" SET nombre = $1, descripcion = $2, fecha = $3, ubicacion = $4, visibilidad = $5, presupuesto = $6, objetivo = $7, color = $8, imagen = $9 WHERE id = $10`,
-        [nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, imagen, id]);
-
+      // If we're only updating the image, use a simpler query
+      if (Object.keys(eventData).length === 2 && 'id' in eventData && 'imagen' in eventData) {
+        console.log('Performing image-only update for event ID:', id);
+        const result = await pool.query(
+          `UPDATE "Eventos" SET imagen = $1 WHERE id = $2 RETURNING id`,
+          [imagen, id]
+        );
+        console.log('Image update result:', result.rowCount, 'rows affected');
+      } else {
+        // Full update
+        const result = await pool.query(
+          `UPDATE "Eventos" SET nombre = $1, descripcion = $2, fecha = $3, ubicacion = $4, visibilidad = $5, presupuesto = $6, objetivo = $7, color = $8, imagen = $9 WHERE id = $10 RETURNING id`,
+          [nombre, descripcion, fecha, ubicacion, visibilidad, parsedPresupuesto, parsedObjetivo, color, imagen, id]
+        );
+        console.log('Full update result:', result.rowCount, 'rows affected');
+      }
+      
       // FALTAN INSERTAR CATEGORIAS
 
       return id

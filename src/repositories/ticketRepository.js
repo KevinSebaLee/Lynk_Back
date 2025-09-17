@@ -37,7 +37,7 @@ class TicketRepository {
   }
 
   static async getCupones(id) {
-    const result = await pool.query('SELECT * FROM "Cupones" WHERE id_user = $1', [id]);
+    const result = await pool.query('SELECT * FROM "Cupones" WHERE $1', [id]);
     return result.rows;
   }
 
@@ -54,13 +54,27 @@ class TicketRepository {
     await pool.query('UPDATE "Usuarios" SET tickets = tickets + $1 WHERE id = $2', [tickets, receiverId]);
 
     await pool.query(
-      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
+      'INSERT INTO "Movimientos" id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
       [senderId, -tickets, `Transfer to ${userReceiverName}`, date]
     );
     await pool.query(
-      'INSERT INTO "Movimientos" (id_user, id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
+      'INSERT INTO "Movimientos" id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
       [receiverId, tickets, `Transfer from ${userSenderName}`, date]
     );
+  }
+
+  static async getCuponById(id) {
+    const result = await pool.query('SELECT * FROM "Cupones" WHERE id = $1', [id]);
+    return result.rows[0];
+  }
+
+  static async createCupon({ couponBody }) {
+    const {titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad } = couponBody;
+    const result = await pool.query(
+      'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad]
+    );
+    return result.rows[0];
   }
 }
 
