@@ -68,11 +68,13 @@ class TicketRepository {
     return result.rows[0];
   }
 
-  static async createCupon({ couponBody }) {
-    const {titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad } = couponBody;
+  static async createCupon(couponBody) {
+    console.log(couponBody);
+
+    const { nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id } = couponBody;
     const result = await pool.query(
-      'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad]
+      'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad, id_evento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id]
     );
     return result.rows[0];
   }

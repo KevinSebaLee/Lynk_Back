@@ -46,10 +46,10 @@ router.get('/cupones', requireAuth, async (req, res) => {
 });
 
 router.post('/cupones', requireAuth, async (req, res) => {
+  const coupon = req.body
+
   try {
-    const newCupon = await ticketService.createCupon({
-      ...req.body
-    });
+    const newCupon = await ticketService.createCupon(coupon);
 
     res.status(201).json(newCupon);
   } catch (err) {

@@ -7,9 +7,10 @@ export const transferTickets = async (data) => TicketRepository.transferTickets(
 export const getTicketsMonth = async (id) => TicketRepository.countTicketsLast6Months(id);
 export const getCuponById = async (id) => TicketRepository.getCuponById(id);
 
-export const createCupon = async ({ couponBody }) => {
+export const createCupon = async (couponBody) => {
   if (!couponBody) {
     throw new Error('Missing required fields');
   }
-  return TicketRepository.createCupon({ couponBody });
+
+  return TicketRepository.createCupon(couponBody);
 };
