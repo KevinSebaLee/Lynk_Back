@@ -180,9 +180,13 @@ export const updateEvent = async (eventData, file = null) => {
   return await EventRepository.updateEvent(fixedData);
 };
 
-export const deleteEvent = async (id) => {
+export const deleteEvent = async (id, user_id) => {
   const event = await getEvent(id);
   if (!event) throw new Error('Event not found');
+
+  if(event.id_creador !== user_id) {
+    throw new Error('Unauthorized: Only the creator can delete this event');
+  }
 
   // Obtener emails de los participantes
   const participants = await EventRepository.getEventParticipants(id);

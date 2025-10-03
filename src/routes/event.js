@@ -66,7 +66,7 @@ router.put('/:id', requireAuth, upload.single('imagen'), async (req, res) => {
 
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    await eventService.deleteEvent(req.params.id);
+    await eventService.deleteEvent(req.params.id, req.user.id);
     res.status(200).json({ message: 'Event deleted successfully' });
   } catch (err) {
     res.status(err.message === 'Event not found' ? 404 : 500).json({ error: err.message });
