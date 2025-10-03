@@ -1,4 +1,5 @@
 import EventRepository from '../repositories/eventRepository.js';
+import { sendCancellationEmail } from './emailService.js';
 import { supabaseClient } from '../database/supabase.js';
 import path from 'path';
 
@@ -182,12 +183,20 @@ export const updateEvent = async (eventData, file = null) => {
 export const deleteEvent = async (id) => {
   const event = await getEvent(id);
   if (!event) throw new Error('Event not found');
-  
-  // Delete the image from Supabase storage if it exists
+
+  // Obtener emails de los participantes
+  const participants = await EventRepository.getEventParticipants(id);
+
+  // Enviar emails de cancelación antes de borrar el evento
+  if (participants.length > 0) {
+    await sendCancellationEmail(participants, event.nombre);
+  }
+
+  // Borrar imagen de Supabase si existe
   if (event.imagen) {
     await deleteImageFromSupabase(event.imagen);
   }
-  
+
   await EventRepository.deleteEvent(id);
 }
 

@@ -145,6 +145,14 @@ class EventRepository {
       [id_evento, id_user]
     );
   }
+
+  static async getEventParticipants(eventId) {
+    const result = await pool.query(
+      'SELECT u.email FROM "EventosAgendados" ea JOIN "Usuarios" u ON ea.id_user = u.id WHERE ea.id_evento = $1',
+      [eventId]
+    );
+    return result.rows.map(r => r.email);
+  }
 }
 
 export default EventRepository;
