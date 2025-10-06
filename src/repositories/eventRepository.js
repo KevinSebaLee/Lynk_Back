@@ -140,6 +140,10 @@ class EventRepository {
         'DELETE FROM "EventosAgendados" WHERE id_evento = $1',
         [id]
       );
+      const deleteCoupons = await pool.query(
+        'DELETE FROM "Cupones" WHERE id_evento = $1',
+        [id]
+      );
       const deleteResult = await pool.query(
         'DELETE FROM "Eventos" WHERE id = $1',
         [id]
