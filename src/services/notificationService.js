@@ -1,6 +1,6 @@
 // src/services/notificationService.js
 
-const Notification = require('../database/models/Notification');
+import notifiCationRepository from '../repositories/notificationRepository.js';
 
 /**
  * Crear una notificación para un usuario
@@ -42,8 +42,4 @@ async function markNotificationAsRead(notificationId) {
   );
 }
 
-module.exports = {
-  createNotification,
-  getUserNotifications,
-  markNotificationAsRead,
-};
+export default { createNotification, getUserNotifications, markNotificationAsRead}

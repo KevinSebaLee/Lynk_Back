@@ -135,6 +135,7 @@ router.get('/:id/inscripciones-mensuales', async (req, res) => {
        GROUP BY month
        ORDER BY month ASC
     `;
+
     const { rows } = await pool.query(query, [id]);
     const result = rows.map(row => ({
       month: Number(row.month),
@@ -159,8 +160,15 @@ router.delete('/:id/agendar', requireAuth, async (req, res) => {
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const event = await eventService.getEvent(req.params.id);
+
+    let isCreator = false;
+
+    if(event.id_creador == req.user.id){
+      isCreator = true;
+    }
+
     if (!event) return res.status(404).json({ error: 'Event not found' });
-    res.json(event);
+    res.json({event, isCreator});
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch event' });
   }

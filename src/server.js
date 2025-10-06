@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'exp://ukrtnqe-anonymous-8081.exp.direct', 'stirring-intense-sheep.ngrok-free.app'],
+  origin: ['http://localhost:3000', 'stirring-intense-sheep.ngrok-free.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],

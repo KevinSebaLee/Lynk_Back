@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import * as notificationService from './../services/notificationService.js'
+
 const router = express.Router();
-const notificationService = require('../services/notificationService');
 
 // Obtener todas las notificaciones de un usuario
 router.get('/:userId', async (req, res) => {
@@ -33,8 +34,7 @@ router.patch('/:notificationId/read', async (req, res) => {
   }
 });
 
-module.exports = router;
-
+export default router
 
 
 
