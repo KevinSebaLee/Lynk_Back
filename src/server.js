@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 
 // Import route modules
-
+import Notifications from './routes/notification.js';
 import Usuarios from './routes/users.js';
 import Tickets from './routes/tickets.js';
 import Home from './routes/index.js';
@@ -45,6 +45,7 @@ app.use('/auth', Auth);
 app.use('/test-connection', Test);
 app.use('/categorias', Categories);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/notifications', Notifications);
 
 app.use(errorHandler);
 
