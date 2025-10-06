@@ -130,6 +130,15 @@ export const getEvent = async (id) => {
   };
 };
 
+export const getEventParticipantsEmails = async (eventId) => {
+  // Busca los participantes en el repositorio intermedio
+  const participantesRaw = await EventRepository.getEventParticipants(eventId);
+  if (!participantesRaw || participantesRaw.length === 0) return [];
+
+  // Retorna solo el email de cada participante
+  return participantesRaw.map(participante => participante.email);
+};
+
 export const updateEvent = async (eventData, file = null) => {
   console.log('updateEvent called with:', {
     id: eventData.id,
@@ -184,12 +193,13 @@ export const deleteEvent = async (id, user_id) => {
   const event = await getEvent(id);
   if (!event) throw new Error('Event not found');
 
-  if(event.id_creador !== user_id) {
-    throw new Error('Unauthorized: Only the creator can delete this event');
-  }
+  //  if(26 !== user_id) {
+  //    throw new Error('Unauthorized: Only the creator can delete this event');
+  //  }
 
   // Obtener emails de los participantes
   const participants = await EventRepository.getEventParticipants(id);
+  console.log('Participants to notify:', participants);
 
   // Enviar emails de cancelación antes de borrar el evento
   if (participants.length > 0) {
@@ -203,6 +213,7 @@ export const deleteEvent = async (id, user_id) => {
 
   await EventRepository.deleteEvent(id);
 }
+
 
 export const createEvent = async (eventData, id_user, file = null) => {
   try {
@@ -253,9 +264,16 @@ export const createEvent = async (eventData, id_user, file = null) => {
 };
 
 export const agendarEvent = async (id_evento, id_user) => {
+  console.log('Entrando al endpoint de agendar');
   const alreadyAgendado = await EventRepository.checkEventAgendado(id_evento, id_user);
   if (alreadyAgendado) throw new Error('Event already registered');
-  await EventRepository.addEventToAgenda(id_evento, id_user);
+  const fechaActual = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  console.log('Fecha para insertar:', fechaActual); // <-- Esto debe verse en la consola
+  await EventRepository.addEventToAgenda(id_evento, id_user, fechaActual);
+};
+
+export const getMonthlyInscriptions = async (eventId) => {
+  return await EventRepository.getMonthlyInscriptions(eventId);
 };
 
 export const removeAgendadoEvent = async (id_evento, id_user) => {

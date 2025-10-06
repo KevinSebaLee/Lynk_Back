@@ -205,10 +205,10 @@ class EventRepository {
     return lookup.rows.length > 0;
   }
 
-  static async addEventToAgenda(id_evento, id_user) {
+  static async addEventToAgenda(id_evento, id_user, date) {
     await pool.query(
-      'INSERT INTO "EventosAgendados" (id_evento, id_user) VALUES ($1, $2)',
-      [id_evento, id_user]
+      'INSERT INTO "EventosAgendados" (id_evento, id_user, date) VALUES ($1, $2, $3)',
+      [id_evento, id_user, date]
     );
   }
 
@@ -219,11 +219,28 @@ class EventRepository {
     );
   }
 
+  static async getMonthlyInscriptions(eventId) {
+  const query = `
+    SELECT EXTRACT(MONTH FROM date) AS month,
+           COUNT(*) AS inscriptions
+      FROM "EventosAgendados"
+     WHERE id_evento = $1
+     GROUP BY month
+     ORDER BY month ASC
+  `;
+  const { rows } = await pool.query(query, [eventId]);
+  return rows.map(row => ({
+    month: Number(row.month),
+    inscriptions: Number(row.inscriptions)
+  }));
+}
+
   static async getEventParticipants(eventId) {
     const result = await pool.query(
       'SELECT u.email FROM "EventosAgendados" ea JOIN "Usuarios" u ON ea.id_user = u.id WHERE ea.id_evento = $1',
       [eventId]
     );
+    console.log('Fetched participants:', result.rows);
     return result.rows.map((r) => r.email);
   }
 }

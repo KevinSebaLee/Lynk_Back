@@ -3,6 +3,9 @@ import { requireAuth } from '../middleware/auth.js';
 import * as eventService from '../services/eventService.js';
 import { upload } from '../middleware/multer.js';
 import path from 'path';
+import nodemailer from 'nodemailer';
+import pool from '../database/pgClient.js';
+
 
 const router = express.Router();
 
@@ -65,20 +68,82 @@ router.put('/:id', requireAuth, upload.single('imagen'), async (req, res) => {
 })
 
 router.delete('/:id', requireAuth, async (req, res) => {
+  console.log('Delete event request for ID:', req.params.id, 'by user:', req.user.id);
   try {
     await eventService.deleteEvent(req.params.id, req.user.id);
     res.status(200).json({ message: 'Event deleted successfully' });
   } catch (err) {
     res.status(err.message === 'Event not found' ? 404 : 500).json({ error: err.message });
-  }
+    }
 })
 
+router.post('/send-cancellation', async (req, res) => {
+  const { recipients, eventName } = req.body;
+  if (!recipients || recipients.length === 0) return res.status(400).send('No recipients');
+
+  let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'eventoslynk@gmail.com',
+      pass: 'uvevgrmbfhrfsdoa', // Usa variables de entorno en producción
+    }
+  });
+
+  const mailOptions = {
+    from: '"Lynk Eventos" <eventoslynk@gmail.com>',
+    subject: `Cancelación del evento: ${eventName}`,
+    text: `Lamentamos informarte que el evento "${eventName}" ha sido cancelado.`
+  };
+
+  try {
+    for (const email of recipients) {
+      await transporter.sendMail({ ...mailOptions, to: email });
+    }
+    res.send('Correos enviados');
+  } catch (error) {
+  
+    res.status(500).send(error.message);
+  }
+});
+
+router.get('/:id/participantes', async (req, res) => {
+  const { id } = req.params;
+  const participantes = await eventService.getEventParticipants(id);
+  res.json(participantes.map(p => p.Usuario));
+});
+
 router.post('/:id/agendar', requireAuth, async (req, res) => {
+      console.error('HOLAA');
+
   try {
     await eventService.agendarEvent(req.params.id, req.user.id);
     res.status(201).json({ message: 'Event scheduled successfully' });
   } catch (err) {
     res.status(err.message === 'Event already registered' ? 409 : 500).json({ error: err.message });
+  }
+});
+
+router.get('/:id/inscripciones-mensuales', async (req, res) => {
+  const { id } = req.params;
+  console.log('Fetching monthly inscriptions for event ID:', id);
+  try {
+    const query = `
+      SELECT EXTRACT(MONTH FROM date) AS month,
+             COUNT(*) AS inscriptions
+        FROM "EventosAgendados"
+       WHERE id_evento = $1
+       GROUP BY month
+       ORDER BY month ASC
+    `;
+    const { rows } = await pool.query(query, [id]);
+    const result = rows.map(row => ({
+      month: Number(row.month),
+      inscriptions: Number(row.inscriptions)
+    }));
+    res.json(result);
+  } catch (err) {
+    console.error('Error al obtener inscripciones mensuales:', err);
+    res.status(500).json({ error: 'Error al obtener inscripciones' });
   }
 });
 

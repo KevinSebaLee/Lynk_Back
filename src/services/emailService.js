@@ -7,7 +7,7 @@ export async function sendCancellationEmail(recipients, eventName) {
     service: 'gmail',
     auth: {
       user: 'eventoslynk@gmail.com',
-      pass: 'Lynk1234', 
+      pass: 'uvevgrmbfhrfsdoa',
     }
   });
 
