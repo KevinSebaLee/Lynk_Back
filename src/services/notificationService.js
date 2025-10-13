@@ -20,3 +20,7 @@ export async function getUserNotifications(id_user) {
 export async function markNotificationAsRead(id) {
   return await notificationRepository.markNotificationAsRead(id);
 }
+
+export async function deleteNotification(id) {
+  return await notificationRepository.deleteNotification(id);
+}

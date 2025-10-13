@@ -34,4 +34,16 @@ router.patch('/:id/read', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    const deleted = await notificationService.deleteNotification(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Notificación no encontrada' });
+    }
+    res.json(deleted);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al borrar notificación', details: err.message });
+  }
+});
+
 export default router;

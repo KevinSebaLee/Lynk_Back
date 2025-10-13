@@ -37,6 +37,16 @@ class NotificationRepository {
       const result = await this.db.query(query, [id]);
       return result.rows[0];
     }
+
+    async deleteNotification(id) {
+        const query = `
+          DELETE FROM "Notificaciones"
+          WHERE id = $1
+          RETURNING *;
+        `;
+        const result = await this.db.query(query, [id]);
+        return result.rows[0];
+      }
   }
   
   export default NotificationRepository;
