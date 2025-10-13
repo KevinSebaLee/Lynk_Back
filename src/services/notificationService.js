@@ -1,45 +1,26 @@
-// src/services/notificationService.js
+import NotificationRepository from '../repositories/notificationRepository.js';
+import db from '../database/pgClient.js';
 
-import notifiCationRepository from '../repositories/notificationRepository.js';
+const notificationRepository = new NotificationRepository(db);
 
-/**
- * Crear una notificación para un usuario
- * @param {String} userId - ID del usuario destino
- * @param {String} type - Tipo de notificación (ej: 'invitacion_evento')
- * @param {Object} data - Datos adicionales (ej: { eventId, fromUserId, mensaje })
- * @returns {Promise<Notification>}
- */
-async function createNotification(userId, type, data = {}) {
-  const notification = new Notification({
-    userId,
-    type,
-    data,
-    read: false,
-    createdAt: new Date(),
+export async function createNotification(id_user, nombre, descripcion) {
+  return await notificationRepository.createNotification({
+    id_user,
+    nombre,
+    descripcion,
+    leida: false,
+    fecha_creacion: new Date()
   });
-  return await notification.save();
 }
 
-/**
- * Obtener todas las notificaciones de un usuario
- * @param {String} userId
- * @returns {Promise<Array<Notification>>}
- */
-async function getUserNotifications(userId) {
-  return await Notification.find({ userId }).sort({ createdAt: -1 });
+export async function getUserNotifications(id_user) {
+  return await notificationRepository.getNotificationsByUser(id_user);
 }
 
-/**
- * Marcar una notificación como leída
- * @param {String} notificationId
- * @returns {Promise<Notification>}
- */
-async function markNotificationAsRead(notificationId) {
-  return await Notification.findByIdAndUpdate(
-    notificationId,
-    { read: true },
-    { new: true }
-  );
+export async function markNotificationAsRead(id) {
+  return await notificationRepository.markNotificationAsRead(id);
 }
 
-export default { createNotification, getUserNotifications, markNotificationAsRead}
+export async function deleteNotification(id) {
+  return await notificationRepository.deleteNotification(id);
+}
