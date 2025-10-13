@@ -72,7 +72,7 @@ router.get('/cupones/:id', requireAuth, async (req, res) => {
 router.get('/cupones/:id_evento/:id_cupon', requireAuth, async (req, res) => {
   try {
     const { id_evento, id_cupon } = req.params;
-    const cupon = await ticketService.getCuponByEventAndId(id_evento, id_cupon);
+    const cupon = await ticketService.getCuponById(id_evento, id_cupon);
     if (!cupon) {
       return res.status(404).json({ error: 'Coupon not found for this event' });
     }

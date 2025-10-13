@@ -5,7 +5,7 @@ export const getCupones = async () => TicketRepository.getCupones();
 export const getTransferUsers = async () => TicketRepository.getTransferUsers();
 export const transferTickets = async (data) => TicketRepository.transferTickets(data);
 export const getTicketsMonth = async (id) => TicketRepository.countTicketsLast6Months(id);
-export const getCuponById = async (id) => TicketRepository.getCuponById(id);
+export const getCuponById = async (id_evento, id) => TicketRepository.getCuponByEventAndId(id_evento, id);
 export const getCuponesByEvent = async (id) => TicketRepository.getCuponesEvento(id);
 
 export const createCupon = async (couponBody) => {

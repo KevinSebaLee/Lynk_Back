@@ -38,8 +38,8 @@ class TicketRepository {
 
   static async getCupones() {
     const result = await pool.query(`
-      SELECT 
-        e.*, c.* 
+      SELECT DISTINCT ON (e.id) 
+        e.* 
       FROM "Eventos" e
       INNER JOIN "Cupones" c ON e.id = c.id_evento
       INNER JOIN "CuponesXEventos" ce ON ce.id_cupon = c.id
@@ -48,6 +48,8 @@ class TicketRepository {
   }
 
   static async getCuponesEvento(id_evento){
+    console.log(id_evento)
+
     const result = await pool.query('SELECT * FROM "Cupones" WHERE id_evento = $1', [id_evento])
 
     return result.rows
@@ -85,12 +87,10 @@ class TicketRepository {
 
 
   static async createCupon(couponBody) {
-    console.log(couponBody);
-
-    const { nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id } = couponBody;
+    const { nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id, descuento } = couponBody;
     const result = await pool.query(
-      'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad, id_evento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id],
+      'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad, id_evento, descuento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id, descuento],
     );
 
     const idCupon = result.rows[0].id
