@@ -37,12 +37,20 @@ class TicketRepository {
   }
 
   static async getCupones() {
-    const result = await pool.query('SELECT * FROM "Cupones"');
+    const result = await pool.query(`
+      SELECT 
+        e.*, c.* 
+      FROM "Eventos" e
+      INNER JOIN "Cupones" c ON e.id = c.id_evento
+      INNER JOIN "CuponesXEventos" ce ON ce.id_cupon = c.id
+    `);
     return result.rows;
   }
 
   static async getCuponesEvento(id_evento){
     const result = await pool.query('SELECT * FROM "Cupones" WHERE id_evento = $1', [id_evento])
+
+    return result.rows
   }
 
   static async getCuponByEventAndId(id_evento, id_cupon) {
