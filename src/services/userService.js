@@ -1,4 +1,4 @@
-import UserRepository from '../repositories/userRepository.js';
+import UserRepository from '../repositories/userRepository.ts';
 
 export const getUsers = async () => {
   return await UserRepository.getUsers();

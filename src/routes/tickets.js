@@ -61,11 +61,25 @@ router.post('/cupones', requireAuth, async (req, res) => {
 router.get('/cupones/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const cupon = await ticketService.getCuponById(id);
+    const cupon = await ticketService.getCuponesByEvent(id);
     res.json(cupon);
   } catch (err) {
     console.error('Tickets Route Error:', err);
     res.status(500).json({ error: 'Failed to fetch offer' });
+  }
+});
+
+router.get('/cupones/:id_evento/:id_cupon', requireAuth, async (req, res) => {
+  try {
+    const { id_evento, id_cupon } = req.params;
+    const cupon = await ticketService.getCuponByEventAndId(id_evento, id_cupon);
+    if (!cupon) {
+      return res.status(404).json({ error: 'Coupon not found for this event' });
+    }
+    res.json(cupon);
+  } catch (err) {
+    console.error('Tickets Route Error:', err);
+    res.status(500).json({ error: 'Failed to fetch coupon for event' });
   }
 });
 

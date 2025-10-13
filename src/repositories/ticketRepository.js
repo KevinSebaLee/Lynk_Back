@@ -36,9 +36,21 @@ class TicketRepository {
     }));
   }
 
-  static async getCupones(id) {
-    const result = await pool.query('SELECT * FROM "Cupones" WHERE $1', [id]);
+  static async getCupones() {
+    const result = await pool.query('SELECT * FROM "Cupones"');
     return result.rows;
+  }
+
+  static async getCuponesEvento(id_evento){
+    const result = await pool.query('SELECT * FROM "Cupones" WHERE id_evento = $1', [id_evento])
+  }
+
+  static async getCuponByEventAndId(id_evento, id_cupon) {
+    const result = await pool.query(
+      'SELECT * FROM "Cupones" WHERE id_evento = $1 AND id = $2',
+      [id_evento, id_cupon]
+    );
+    return result.rows[0];
   }
 
   static async getTransferUsers() {
@@ -63,10 +75,6 @@ class TicketRepository {
     );
   }
 
-  static async getCuponById(id) {
-    const result = await pool.query('SELECT * FROM "Cupones" WHERE id = $1', [id]);
-    return result.rows[0];
-  }
 
   static async createCupon(couponBody) {
     console.log(couponBody);
@@ -74,8 +82,16 @@ class TicketRepository {
     const { nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id } = couponBody;
     const result = await pool.query(
       'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad, id_evento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id]
+      [nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id],
     );
+
+    const idCupon = result.rows[0].id
+
+    const result1 = await pool.query(
+      'INSERT INTO "CuponesXEventos" (id_evento, id_cupon) VALUES ($1, $2) RETURNING *',
+      [evento_id, idCupon]
+    )
+
     return result.rows[0];
   }
 }
