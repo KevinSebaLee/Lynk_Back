@@ -1,12 +1,17 @@
-import pool from '../database/pgClient.js';
+import { supabaseClient } from '../database/supabase.js';
 import bcrypt from 'bcryptjs';
 
 class RegisterRepository {
   static async registerUser(userData: any) {
     const { nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, esEmpresa, cuil, telefono, direccion } = userData;
 
-    const existing = await pool.query('SELECT id FROM "Usuarios" WHERE email = $1', [email]);
-    if (existing.rows.length > 0) throw new Error('Email already registered');
+    const { data: existing, error: existingError } = await supabaseClient
+      .from('Usuarios')
+      .select('id')
+      .eq('email', email);
+
+    if (existingError) throw existingError;
+    if (existing && existing.length > 0) throw new Error('Email already registered');
 
     console.log('Registering user with esEmpresa:', esEmpresa);
 
@@ -16,19 +21,39 @@ class RegisterRepository {
 
     const alias = apellido ? nombre.substring(0, midNombre) + apellido.substring(midApellido) : nombre;
 
-    const insertResult = await pool.query(
-      'INSERT INTO "Usuarios" (nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, alias, tickets, "esEmpresa") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9) RETURNING id, nombre, apellido, email, "esEmpresa"',
-      [nombre, apellido, email, hashedPassword, id_pais, id_genero, id_premium, alias, !!esEmpresa]
-    );
+    const { data: insertResult, error: insertError } = await supabaseClient
+      .from('Usuarios')
+      .insert({
+        nombre,
+        apellido,
+        email,
+        contraseña: hashedPassword,
+        id_pais,
+        id_genero,
+        id_premium,
+        alias,
+        tickets: 0,
+        esEmpresa: !!esEmpresa
+      })
+      .select('id, nombre, apellido, email, esEmpresa')
+      .single();
+
+    if (insertError) throw insertError;
 
     if (esEmpresa) {
-      await pool.query(
-        'INSERT INTO "Empresas" (id_user, cuil, telefono, direccion) VALUES ($1, $2, $3, $4)',
-        [insertResult.rows[0].id, cuil, telefono, direccion]
-      );
+      const { error: empresaError } = await supabaseClient
+        .from('Empresas')
+        .insert({
+          id_user: insertResult.id,
+          cuil,
+          telefono,
+          direccion
+        });
+
+      if (empresaError) throw empresaError;
     }
 
-    return insertResult.rows[0];
+    return insertResult;
   }
 }
 

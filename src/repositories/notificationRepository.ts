@@ -1,4 +1,4 @@
-import pool from '../database/pgClient.js';
+import { supabaseClient } from '../database/supabase.js';
 
 class NotificationRepository {
   // Crear una notificación
@@ -9,47 +9,57 @@ class NotificationRepository {
     leida?: boolean;
     fecha_creacion?: Date;
   }) {
-    const query = `
-      INSERT INTO "Notificaciones" (id_user, nombre, descripcion, leida, fecha_creacion)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *;
-    `;
-    const values = [id_user, nombre, descripcion, leida, fecha_creacion];
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    const { data, error } = await supabaseClient
+      .from('Notificaciones')
+      .insert({
+        id_user,
+        nombre,
+        descripcion,
+        leida,
+        fecha_creacion
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 
   // Obtener todas las notificaciones de un usuario
   static async getNotificationsByUser(id_user: string | number) {
-    const query = `
-      SELECT * FROM "Notificaciones"
-      WHERE id_user = $1
-      ORDER BY fecha_creacion DESC;
-    `;
-    const result = await pool.query(query, [id_user]);
-    return result.rows;
+    const { data, error } = await supabaseClient
+      .from('Notificaciones')
+      .select('*')
+      .eq('id_user', id_user)
+      .order('fecha_creacion', { ascending: false });
+
+    if (error) throw error;
+    return data;
   }
 
   // Marcar una notificación como leída
   static async markNotificationAsRead(id: string | number) {
-    const query = `
-      UPDATE "Notificaciones"
-      SET leida = TRUE
-      WHERE id = $1
-      RETURNING *;
-    `;
-    const result = await pool.query(query, [id]);
-    return result.rows[0];
+    const { data, error } = await supabaseClient
+      .from('Notificaciones')
+      .update({ leida: true })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 
   static async deleteNotification(id: string | number) {
-    const query = `
-      DELETE FROM "Notificaciones"
-      WHERE id = $1
-      RETURNING *;
-    `;
-    const result = await pool.query(query, [id]);
-    return result.rows[0];
+    const { data, error } = await supabaseClient
+      .from('Notificaciones')
+      .delete()
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 }
 

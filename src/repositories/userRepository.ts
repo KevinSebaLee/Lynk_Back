@@ -1,18 +1,24 @@
-import pool from '../database/pgClient.js';
 import { supabaseClient } from '../database/supabase.js';
 
 class UserRepository {
   static async getUsers() {
-    const baseQuery = `
-      SELECT u.*, p.nombre AS pais_nombre, g.nombre AS genero_nombre, pl.titulo AS plan_titulo
-      FROM "Usuarios" u
-      LEFT JOIN "Paises" p ON u.id_pais = p.id
-      LEFT JOIN "Generos" g ON u.id_genero = g.id
-      LEFT JOIN "Planes" pl ON u.id_premium = pl.id
-    `;
+    const { data, error } = await supabaseClient
+      .from('Usuarios')
+      .select(`
+        *,
+        Paises!id_pais(nombre),
+        Generos!id_genero(nombre),
+        Planes!id_premium(titulo)
+      `);
 
-    const result = await pool.query(baseQuery);
-    return result.rows.map(({ id_genero, id_pais, id_premium, ...rest }) => rest);
+    if (error) throw error;
+
+    return data.map(({ id_genero, id_pais, id_premium, Paises, Generos, Planes, ...rest }) => ({
+      ...rest,
+      pais_nombre: Paises?.nombre,
+      genero_nombre: Generos?.nombre,
+      plan_titulo: Planes?.titulo
+    }));
   }
 }
 

@@ -1,33 +1,44 @@
-import pool from '../database/pgClient.js';
+import { supabaseClient } from '../database/supabase.js';
 
 class HomeRepository {
   static async getHomeData(id: string | number) {
-    const userResult = await pool.query(`
-      SELECT u.nombre AS user_nombre, u.tickets, p.titulo AS plan_titulo 
-      FROM "Usuarios" u
-      INNER JOIN "Planes" p ON u.id_premium = p.id
-      WHERE u.id = $1
-      LIMIT 1  
-    `, [id]);
+    const { data: userResult, error: userError } = await supabaseClient
+      .from('Usuarios')
+      .select(`
+        nombre,
+        tickets,
+        Planes!id_premium(titulo)
+      `)
+      .eq('id', id)
+      .limit(1)
+      .single();
 
-    const eventosRecientesResult = await pool.query(`
-      SELECT *
-      FROM "Eventos" e
-      ORDER BY e.fecha_creacion
-      LIMIT 5
-    `);
+    if (userError) throw userError;
 
-    const eventosUsuario = await pool.query(`
-      SELECT e.id, e.nombre, e.fecha, e.ubicacion, e.imagen
-      FROM "Eventos" e
-      WHERE e.id_creador = $1
-      ORDER BY e.fecha DESC
-    `, [id]);
+    const { data: eventosRecientes, error: eventosError } = await supabaseClient
+      .from('Eventos')
+      .select('*')
+      .order('fecha_creacion', { ascending: true })
+      .limit(5);
+
+    if (eventosError) throw eventosError;
+
+    const { data: eventosUsuario, error: eventosUsuarioError } = await supabaseClient
+      .from('Eventos')
+      .select('id, nombre, fecha, ubicacion, imagen')
+      .eq('id_creador', id)
+      .order('fecha', { ascending: false });
+
+    if (eventosUsuarioError) throw eventosUsuarioError;
 
     return {
-      user: userResult.rows[0],
-      eventosRecientes: eventosRecientesResult.rows,
-      eventosUsuario: eventosUsuario.rows
+      user: {
+        user_nombre: userResult.nombre,
+        tickets: userResult.tickets,
+        plan_titulo: (userResult.Planes as any)?.titulo
+      },
+      eventosRecientes,
+      eventosUsuario
     };
   }
 }

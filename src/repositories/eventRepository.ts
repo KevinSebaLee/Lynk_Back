@@ -1,4 +1,4 @@
-import pool from "../database/pgClient.js";
+import { supabaseClient } from "../database/supabase.js";
 
 class EventRepository {
   static async createEvent(eventData: any, id_user: string | number) {
@@ -21,21 +21,25 @@ class EventRepository {
     const parsedObjetivo = objetivo === "" ? null : parseFloat(objetivo) || 0;
 
     try {
-      const insertResult = await pool.query(
-        'INSERT INTO "Eventos" (nombre, descripcion, fecha, ubicacion, visibilidad, presupuesto, objetivo, color, id_creador) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id',
-        [
+      const { data: insertResult, error: insertError } = await supabaseClient
+        .from('Eventos')
+        .insert({
           nombre,
           descripcion,
           fecha,
           ubicacion,
           visibilidad,
-          parsedPresupuesto,
-          parsedObjetivo,
+          presupuesto: parsedPresupuesto,
+          objetivo: parsedObjetivo,
           color,
-          id_user,
-        ]
-      );
-      const id_evento = insertResult.rows[0]?.id;
+          id_creador: id_user,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+
+      const id_evento = insertResult?.id;
       if (id_categoria) {
         try {
           const categoriesArray =
@@ -44,10 +48,14 @@ class EventRepository {
               : id_categoria;
           if (Array.isArray(categoriesArray) && categoriesArray.length > 0) {
             for (let i = 0; i < categoriesArray.length; i++) {
-              await pool.query(
-                'INSERT INTO "EventosCategoria" (id_evento, id_categoria) VALUES ($1, $2)',
-                [id_evento, categoriesArray[i]]
-              );
+              const { error: catError } = await supabaseClient
+                .from('EventosCategoria')
+                .insert({
+                  id_evento,
+                  id_categoria: categoriesArray[i]
+                });
+              
+              if (catError) throw catError;
             }
           }
         } catch (error) {
@@ -55,10 +63,12 @@ class EventRepository {
         }
       }
       if (imagen) {
-        await pool.query('UPDATE "Eventos" SET imagen = $1 WHERE id = $2', [
-          imagen,
-          id_evento,
-        ]);
+        const { error: updateError } = await supabaseClient
+          .from('Eventos')
+          .update({ imagen })
+          .eq('id', id_evento);
+
+        if (updateError) throw updateError;
       }
       return id_evento;
     } catch (error) {
@@ -101,29 +111,32 @@ class EventRepository {
         "imagen" in eventData
       ) {
         console.log("Performing image-only update for event ID:", id);
-        const result = await pool.query(
-          `UPDATE "Eventos" SET imagen = $1 WHERE id = $2 RETURNING id`,
-          [imagen, id]
-        );
-        console.log("Image update result:", result.rowCount, "rows affected");
+        const { error } = await supabaseClient
+          .from('Eventos')
+          .update({ imagen })
+          .eq('id', id);
+
+        if (error) throw error;
+        console.log("Image update successful");
       } else {
         // Full update
-        const result = await pool.query(
-          `UPDATE "Eventos" SET nombre = $1, descripcion = $2, fecha = $3, ubicacion = $4, visibilidad = $5, presupuesto = $6, objetivo = $7, color = $8, imagen = $9 WHERE id = $10 RETURNING id`,
-          [
+        const { error } = await supabaseClient
+          .from('Eventos')
+          .update({
             nombre,
             descripcion,
             fecha,
             ubicacion,
             visibilidad,
-            parsedPresupuesto,
-            parsedObjetivo,
+            presupuesto: parsedPresupuesto,
+            objetivo: parsedObjetivo,
             color,
-            imagen,
-            id,
-          ]
-        );
-        console.log("Full update result:", result.rowCount, "rows affected");
+            imagen
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+        console.log("Full update successful");
       }
 
       // FALTAN INSERTAR CATEGORIAS
@@ -136,21 +149,27 @@ class EventRepository {
 
   static async deleteEvent(id: string | number) {
     try {
-      const deleteScheduledUsers = await pool.query(
-        'DELETE FROM "EventosAgendados" WHERE id_evento = $1',
-        [id]
-      );
-      const deleteCoupons = await pool.query(
-        'DELETE FROM "Cupones" WHERE id_evento = $1',
-        [id]
-      );
-      const deleteResult = await pool.query(
-        'DELETE FROM "Eventos" WHERE id = $1',
-        [id]
-      );
-      if (deleteResult.rowCount === 0) {
-        throw new Error("Event not found");
-      }
+      const { error: deleteScheduledError } = await supabaseClient
+        .from('EventosAgendados')
+        .delete()
+        .eq('id_evento', id);
+
+      if (deleteScheduledError) throw deleteScheduledError;
+
+      const { error: deleteCouponsError } = await supabaseClient
+        .from('Cupones')
+        .delete()
+        .eq('id_evento', id);
+
+      if (deleteCouponsError) throw deleteCouponsError;
+
+      const { error: deleteEventError } = await supabaseClient
+        .from('Eventos')
+        .delete()
+        .eq('id', id);
+
+      if (deleteEventError) throw deleteEventError;
+
       return true;
     } catch (error) {
       throw error;
@@ -158,94 +177,123 @@ class EventRepository {
   }
 
   static async getAllEvents() {
-    const baseQuery = `
-      SELECT e.*,
-        u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, u.pfp AS usuario_pfp,
-        c.nombre AS categoria_nombre
-      FROM "Eventos" e
-      LEFT JOIN "Usuarios" u ON e.id_creador = u.id
-      LEFT JOIN "EventosCategoria" ec ON e.id = ec.id_evento
-      LEFT JOIN "Categorias" c ON ec.id_categoria = c.id
-      ORDER BY e.fecha_creacion DESC`;
-    const result = await pool.query(baseQuery);
-    return result.rows;
+    const { data, error } = await supabaseClient
+      .from('Eventos')
+      .select(`
+        *,
+        Usuarios!id_creador(nombre, apellido, pfp),
+        EventosCategoria(
+          Categorias!id_categoria(nombre)
+        )
+      `)
+      .order('fecha_creacion', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map((event: any) => ({
+      ...event,
+      usuario_nombre: event.Usuarios?.nombre,
+      usuario_apellido: event.Usuarios?.apellido,
+      usuario_pfp: event.Usuarios?.pfp,
+      categoria_nombre: event.EventosCategoria?.[0]?.Categorias?.nombre
+    }));
   }
 
   static async getEventById(id: string | number) {
-    const baseQuery = `
-      SELECT
-      e.id,
-      e.nombre,
-      e.descripcion,
-      e.fecha,
-      e.ubicacion,
-      e.visibilidad,
-      e.presupuesto,
-      e.objetivo,
-      e.color,
-      e.imagen,
-      e.id_creador,
-      e.fecha_creacion,              
-      e.tags,
-      u.nombre  AS usuario_nombre,
-      u.apellido AS usuario_apellido,
-      u.pfp     AS usuario_pfp,
-      c.nombre  AS categoria_nombre
-    FROM "Eventos" e
-    LEFT JOIN "Usuarios" u ON e.id_creador = u.id
-    LEFT JOIN "EventosCategoria" ec ON e.id = ec.id_evento
-    LEFT JOIN "Categorias" c ON ec.id_categoria = c.id
-    WHERE e.id = $1;
-    `;
-    const result = await pool.query(baseQuery, [id]);
-    return result.rows[0];
+    const { data, error } = await supabaseClient
+      .from('Eventos')
+      .select(`
+        id,
+        nombre,
+        descripcion,
+        fecha,
+        ubicacion,
+        visibilidad,
+        presupuesto,
+        objetivo,
+        color,
+        imagen,
+        id_creador,
+        fecha_creacion,
+        tags,
+        Usuarios!id_creador(nombre, apellido, pfp),
+        EventosCategoria(
+          Categorias!id_categoria(nombre)
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    if (!data) return null;
+
+    return {
+      ...data,
+      usuario_nombre: (data.Usuarios as any)?.nombre,
+      usuario_apellido: (data.Usuarios as any)?.apellido,
+      usuario_pfp: (data.Usuarios as any)?.pfp,
+      categoria_nombre: (data.EventosCategoria as any)?.[0]?.Categorias?.nombre
+    };
   }
 
   static async checkEventAgendado(id_evento: string | number, id_user: string | number) {
-    const lookup = await pool.query(
-      'SELECT id_evento FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2 LIMIT 1',
-      [id_evento, id_user]
-    );
-    return lookup.rows.length > 0;
+    const { data, error } = await supabaseClient
+      .from('EventosAgendados')
+      .select('id_evento')
+      .eq('id_evento', id_evento)
+      .eq('id_user', id_user)
+      .limit(1);
+
+    if (error) throw error;
+    return data && data.length > 0;
   }
 
   static async addEventToAgenda(id_evento: string | number, id_user: string | number, date: any) {
-    await pool.query(
-      'INSERT INTO "EventosAgendados" (id_evento, id_user, date) VALUES ($1, $2, $3)',
-      [id_evento, id_user, date]
-    );
+    const { error } = await supabaseClient
+      .from('EventosAgendados')
+      .insert({
+        id_evento,
+        id_user,
+        date
+      });
+
+    if (error) throw error;
   }
 
   static async removeEventFromAgenda(id_evento: string | number, id_user: string | number) {
-    await pool.query(
-      'DELETE FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2',
-      [id_evento, id_user]
-    );
+    const { error } = await supabaseClient
+      .from('EventosAgendados')
+      .delete()
+      .eq('id_evento', id_evento)
+      .eq('id_user', id_user);
+
+    if (error) throw error;
   }
 
   static async getMonthlyInscriptions(eventId: string | number) {
-  const query = `
-    SELECT EXTRACT(MONTH FROM date) AS month,
-           COUNT(*) AS inscriptions
-      FROM "EventosAgendados"
-     WHERE id_evento = $1
-     GROUP BY month
-     ORDER BY month ASC
-  `;
-  const { rows } = await pool.query(query, [eventId]);
-  return rows.map(row => ({
-    month: Number(row.month),
-    inscriptions: Number(row.inscriptions)
-  }));
-}
+    const { data, error } = await supabaseClient.rpc('get_monthly_inscriptions', { event_id: eventId });
+
+    if (error) throw error;
+
+    return data.map((row: any) => ({
+      month: Number(row.month),
+      inscriptions: Number(row.inscriptions)
+    }));
+  }
 
   static async getEventParticipants(eventId: string | number) {
-    const result = await pool.query(
-      'SELECT u.email FROM "EventosAgendados" ea JOIN "Usuarios" u ON ea.id_user = u.id WHERE ea.id_evento = $1',
-      [eventId]
-    );
-    console.log('Fetched participants:', result.rows);
-    return result.rows.map((r) => r.email);
+    const { data, error } = await supabaseClient
+      .from('EventosAgendados')
+      .select(`
+        Usuarios!id_user(email)
+      `)
+      .eq('id_evento', eventId);
+
+    if (error) throw error;
+
+    console.log('Fetched participants:', data);
+    return data.map((r: any) => r.Usuarios?.email);
   }
 }
 

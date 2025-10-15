@@ -1,10 +1,17 @@
-import pool from '../database/pgClient.js';
+import { supabaseClient } from '../database/supabase.js';
 import bcrypt from 'bcryptjs';
 
 class AuthRepository {
   static async findUserByEmail(email: string) {
-    const result = await pool.query('SELECT * FROM "Usuarios" WHERE email = $1 LIMIT 1', [email]);
-    return result.rows[0];
+    const { data, error } = await supabaseClient
+      .from('Usuarios')
+      .select('*')
+      .eq('email', email)
+      .limit(1)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+    return data;
   }
 
   static async comparePassword(plain: string, hash: string) {

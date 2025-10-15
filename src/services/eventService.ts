@@ -111,7 +111,7 @@ export const getEvent = async (id: string | number): Promise<any> => {
   const event = await EventRepository.getEventById(id);
   if (!event) return null;
 
-  const { id_categoria, presupuesto, objetivo, ...rest } = event;
+  const { presupuesto, objetivo, ...rest } = event;
 
   let imagenFinal = null;
   if (rest.imagen) {

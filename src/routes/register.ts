@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
         user_apellido: user.apellido,
         user_email: user.email,
         tickets: 0,
-        plan_titulo: user.plan_titulo || 'Básico'
+        plan_titulo: (user as any).plan_titulo || 'Básico'
       },
       token,
       message: 'Registration successful'

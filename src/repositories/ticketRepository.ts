@@ -1,71 +1,100 @@
-import pool from '../database/pgClient.js';
+import { supabaseClient } from '../database/supabase.js';
 
 class TicketRepository {
   static async getMovimientos(id: string | number) {
-    const result = await pool.query(`
-      SELECT m.*, u.tickets as tickets, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
-      FROM "Movimientos" m
-      LEFT JOIN "Usuarios" u ON m.id_user = u.id
-      LEFT JOIN "Productos" p ON p.id = m.id_producto
-      LEFT JOIN "Eventos" e ON p.id_evento = e.id
-      LEFT JOIN "Monedas" mo ON m.id_moneda = mo.id
-      LEFT JOIN "Categorias" c ON m.id_categoria = c.id
-      LEFT JOIN "TipoMovimientos" tm ON m.id_tipo_movimiento = tm.id
-      WHERE m.id_user = $1
-    `, [id]);
-    return result.rows;
+    const { data, error } = await supabaseClient
+      .from('Movimientos')
+      .select(`
+        *,
+        Usuarios!id_user(tickets),
+        Productos!id_producto(
+          Eventos!id_evento(nombre)
+        ),
+        Monedas!id_moneda(nombre),
+        Categorias!id_categoria(nombre),
+        TipoMovimientos!id_tipo_movimiento(icon)
+      `)
+      .eq('id_user', id);
+
+    if (error) throw error;
+
+    return data.map(row => ({
+      ...row,
+      tickets: row.Usuarios?.tickets,
+      evento_nombre: row.Productos?.Eventos?.nombre,
+      moneda_nombre: row.Monedas?.nombre,
+      categoria_nombre: row.Categorias?.nombre,
+      tipo_movimiento_icon: row.TipoMovimientos?.icon
+    }));
   }
 
   static async countTicketsLast6Months(id: string | number) {
-    const result = await pool.query(`
-      SELECT 
-        DATE_TRUNC('month', m.fecha_transaccion) AS month,
-        -COALESCE(SUM(m.monto), 0) AS total_tickets
-      FROM "Movimientos" m
-      WHERE m.id_user = $1
-        AND m.monto < 0
-        AND m.fecha_transaccion >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
-        AND m.fecha_transaccion < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')
-      GROUP BY month
-      ORDER BY month ASC;
-    `, [id]);
+    const { data, error } = await supabaseClient.rpc('count_tickets_last_6_months', { user_id: id });
 
-    return result.rows.map(row => ({
+    if (error) throw error;
+
+    return data.map((row: any) => ({
       month: row.month,
       total_tickets: row.total_tickets
     }));
   }
 
   static async getCupones() {
-    const result = await pool.query(`
-      SELECT DISTINCT ON (e.id) 
-        e.* 
-      FROM "Eventos" e
-      INNER JOIN "Cupones" c ON e.id = c.id_evento
-      INNER JOIN "CuponesXEventos" ce ON ce.id_cupon = c.id
-    `);
-    return result.rows;
+    const { data, error } = await supabaseClient
+      .from('Eventos')
+      .select(`
+        *,
+        Cupones!id_evento(
+          CuponesXEventos!id_cupon(*)
+        )
+      `)
+      .not('Cupones', 'is', null);
+
+    if (error) throw error;
+
+    // Remove duplicates based on event id
+    const uniqueEvents = data.reduce((acc: any[], current: any) => {
+      if (!acc.find((item: any) => item.id === current.id)) {
+        acc.push(current);
+      }
+      return acc;
+    }, []);
+
+    return uniqueEvents;
   }
 
   static async getCuponesEvento(id_evento: string | number){
     console.log(id_evento)
 
-    const result = await pool.query('SELECT * FROM "Cupones" WHERE id_evento = $1', [id_evento])
+    const { data, error } = await supabaseClient
+      .from('Cupones')
+      .select('*')
+      .eq('id_evento', id_evento);
 
-    return result.rows
+    if (error) throw error;
+
+    return data;
   }
 
   static async getCuponByEventAndId(id_evento: string | number, id_cupon: string | number) {
-    const result = await pool.query(
-      'SELECT * FROM "Cupones" WHERE id_evento = $1 AND id = $2',
-      [id_evento, id_cupon]
-    );
-    return result.rows[0];
+    const { data, error } = await supabaseClient
+      .from('Cupones')
+      .select('*')
+      .eq('id_evento', id_evento)
+      .eq('id', id_cupon)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
   }
 
   static async getTransferUsers() {
-    const result = await pool.query('SELECT id, nombre, apellido, pfp FROM "Usuarios"');
-    return result.rows;
+    const { data, error } = await supabaseClient
+      .from('Usuarios')
+      .select('id, nombre, apellido, pfp');
+
+    if (error) throw error;
+    return data;
   }
 
   static async transferTickets({ senderId, tickets, receiverId, date, userSenderName, userReceiverName }: {
@@ -76,38 +105,98 @@ class TicketRepository {
     userSenderName: string;
     userReceiverName: string;
   }) {
-    const sender = await pool.query('SELECT tickets FROM "Usuarios" WHERE id = $1', [senderId]);
-    if (sender.rows[0].tickets < tickets) throw new Error('Insufficient tickets');
+    const { data: sender, error: senderError } = await supabaseClient
+      .from('Usuarios')
+      .select('tickets')
+      .eq('id', senderId)
+      .single();
 
-    await pool.query('UPDATE "Usuarios" SET tickets = tickets - $1 WHERE id = $2', [tickets, senderId]);
-    await pool.query('UPDATE "Usuarios" SET tickets = tickets + $1 WHERE id = $2', [tickets, receiverId]);
+    if (senderError) throw senderError;
+    if (sender.tickets < tickets) throw new Error('Insufficient tickets');
 
-    await pool.query(
-      'INSERT INTO "Movimientos" id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
-      [senderId, -tickets, `Transfer to ${userReceiverName}`, date]
-    );
-    await pool.query(
-      'INSERT INTO "Movimientos" id_producto, id_moneda, id_categoria, id_tipo_movimiento, monto, titulo, fecha_transaccion) VALUES ($1, null, 173, 2, 2, $2, $3, $4)',
-      [receiverId, tickets, `Transfer from ${userSenderName}`, date]
-    );
+    // Update sender tickets
+    const { error: updateSenderError } = await supabaseClient
+      .from('Usuarios')
+      .update({ tickets: sender.tickets - Number(tickets) })
+      .eq('id', senderId);
+
+    if (updateSenderError) throw updateSenderError;
+
+    // Update receiver tickets
+    const { error: updateReceiverError } = await supabaseClient.rpc('increment_user_tickets', {
+      user_id: receiverId,
+      ticket_amount: tickets
+    });
+
+    if (updateReceiverError) throw updateReceiverError;
+
+    // Insert sender movement
+    const { error: insertSenderError } = await supabaseClient
+      .from('Movimientos')
+      .insert({
+        id_user: senderId,
+        id_producto: null,
+        id_moneda: null,
+        id_categoria: 173,
+        id_tipo_movimiento: 2,
+        monto: -Number(tickets),
+        titulo: `Transfer to ${userReceiverName}`,
+        fecha_transaccion: date
+      });
+
+    if (insertSenderError) throw insertSenderError;
+
+    // Insert receiver movement
+    const { error: insertReceiverError } = await supabaseClient
+      .from('Movimientos')
+      .insert({
+        id_user: receiverId,
+        id_producto: null,
+        id_moneda: null,
+        id_categoria: 173,
+        id_tipo_movimiento: 2,
+        monto: Number(tickets),
+        titulo: `Transfer from ${userSenderName}`,
+        fecha_transaccion: date
+      });
+
+    if (insertReceiverError) throw insertReceiverError;
   }
 
 
   static async createCupon(couponBody: any) {
     const { nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id, descuento } = couponBody;
-    const result = await pool.query(
-      'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad, id_evento, descuento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-      [nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id, descuento],
-    );
+    
+    const { data, error } = await supabaseClient
+      .from('Cupones')
+      .insert({
+        titulo: nombre,
+        descripcion,
+        vencimiento,
+        condiciones,
+        beneficios,
+        precio: min_compra,
+        cantidad: max_usos,
+        id_evento: evento_id,
+        descuento
+      })
+      .select()
+      .single();
 
-    const idCupon = result.rows[0].id
+    if (error) throw error;
 
-    const result1 = await pool.query(
-      'INSERT INTO "CuponesXEventos" (id_evento, id_cupon) VALUES ($1, $2) RETURNING *',
-      [evento_id, idCupon]
-    )
+    const idCupon = data.id;
 
-    return result.rows[0];
+    const { error: insertError } = await supabaseClient
+      .from('CuponesXEventos')
+      .insert({
+        id_evento: evento_id,
+        id_cupon: idCupon
+      });
+
+    if (insertError) throw insertError;
+
+    return data;
   }
 }
 

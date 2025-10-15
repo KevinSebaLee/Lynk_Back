@@ -4,7 +4,7 @@ import * as eventService from '../services/eventService.js';
 import { upload } from '../middleware/multer.js';
 import path from 'path';
 import nodemailer from 'nodemailer';
-import pool from '../database/pgClient.js';
+import { supabaseClient } from '../database/supabase.js';
 
 
 const router = express.Router();
@@ -135,17 +135,11 @@ router.get('/:id/inscripciones-mensuales', async (req, res) => {
   const { id } = req.params;
   console.log('Fetching monthly inscriptions for event ID:', id);
   try {
-    const query = `
-      SELECT EXTRACT(MONTH FROM date) AS month,
-             COUNT(*) AS inscriptions
-        FROM "EventosAgendados"
-       WHERE id_evento = $1
-       GROUP BY month
-       ORDER BY month ASC
-    `;
+    const { data, error } = await supabaseClient.rpc('get_monthly_inscriptions', { event_id: id });
 
-    const { rows } = await pool.query(query, [id]);
-    const result = rows.map(row => ({
+    if (error) throw error;
+
+    const result = data.map((row: any) => ({
       month: Number(row.month),
       inscriptions: Number(row.inscriptions)
     }));
