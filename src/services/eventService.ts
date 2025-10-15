@@ -4,7 +4,7 @@ import { supabaseClient } from '../database/supabase.js';
 import path from 'path';
 
 // Helper function to handle image uploads to Supabase
-const uploadImageToSupabase = async (file, eventId) => {
+const uploadImageToSupabase = async (file: Express.Multer.File, eventId: number): Promise<string> => {
   if (!file || !file.buffer || file.buffer.length === 0) {
     throw new Error('File buffer is empty or invalid');
   }
@@ -53,7 +53,7 @@ const uploadImageToSupabase = async (file, eventId) => {
       const checkResponse = await fetch(imagePath);
       console.log('File verification response:', checkResponse.status, checkResponse.ok);
     } catch (verifyError) {
-      console.warn('Warning: Could not verify uploaded file:', verifyError.message);
+      console.warn('Warning: Could not verify uploaded file:', (verifyError as Error).message);
     }
 
     return imagePath;
@@ -64,7 +64,7 @@ const uploadImageToSupabase = async (file, eventId) => {
 };
 
 // Helper function to delete image from Supabase
-const deleteImageFromSupabase = async (imageUrl) => {
+const deleteImageFromSupabase = async (imageUrl: string | null): Promise<void> => {
   if (!imageUrl) return;
 
   try {
@@ -88,7 +88,7 @@ const deleteImageFromSupabase = async (imageUrl) => {
 
 export const getEvents = async () => {
   const rows = await EventRepository.getAllEvents();
-  return rows.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }) => {
+  return rows.map(({ id_categoria, id_creador, presupuesto, objetivo, ...rest }: any) => {
     let imagenFinal = null;
     if (rest.imagen) {
       if (Buffer.isBuffer(rest.imagen)) {
@@ -107,7 +107,7 @@ export const getEvents = async () => {
   });
 };
 
-export const getEvent = async (id) => {
+export const getEvent = async (id: string | number): Promise<any> => {
   const event = await EventRepository.getEventById(id);
   if (!event) return null;
 
@@ -130,16 +130,16 @@ export const getEvent = async (id) => {
   };
 };
 
-export const getEventParticipantsEmails = async (eventId) => {
+export const getEventParticipantsEmails = async (eventId: string | number): Promise<string[]> => {
   // Busca los participantes en el repositorio intermedio
   const participantesRaw = await EventRepository.getEventParticipants(eventId);
   if (!participantesRaw || participantesRaw.length === 0) return [];
 
   // Retorna solo el email de cada participante
-  return participantesRaw.map(participante => participante.email);
+  return participantesRaw.map((participante: any) => participante.email);
 };
 
-export const updateEvent = async (eventData, file = null) => {
+export const updateEvent = async (eventData: any, file: Express.Multer.File | null = null): Promise<any> => {
   console.log('updateEvent called with:', {
     id: eventData.id,
     fields: Object.keys(eventData),
@@ -189,7 +189,7 @@ export const updateEvent = async (eventData, file = null) => {
   return await EventRepository.updateEvent(fixedData);
 };
 
-export const deleteEvent = async (id, user_id) => {
+export const deleteEvent = async (id: string | number, user_id: string | number): Promise<void> => {
   const event = await getEvent(id);
   if (!event) throw new Error('Event not found');
 
@@ -215,7 +215,7 @@ export const deleteEvent = async (id, user_id) => {
 }
 
 
-export const createEvent = async (eventData, id_user, file = null) => {
+export const createEvent = async (eventData: any, id_user: string | number, file: Express.Multer.File | null = null): Promise<{ eventId: number; imagePath: string | null }> => {
   try {
     // For presupuesto: handle empty string, convert to number if string, or keep as is
     if (eventData.presupuesto === '') {
@@ -263,7 +263,7 @@ export const createEvent = async (eventData, id_user, file = null) => {
   }
 };
 
-export const agendarEvent = async (id_evento, id_user) => {
+export const agendarEvent = async (id_evento: string | number, id_user: string | number): Promise<void> => {
   console.log('Entrando al endpoint de agendar');
   const alreadyAgendado = await EventRepository.checkEventAgendado(id_evento, id_user);
   if (alreadyAgendado) throw new Error('Event already registered');
@@ -272,11 +272,11 @@ export const agendarEvent = async (id_evento, id_user) => {
   await EventRepository.addEventToAgenda(id_evento, id_user, fechaActual);
 };
 
-export const getMonthlyInscriptions = async (eventId) => {
+export const getMonthlyInscriptions = async (eventId: string | number): Promise<any> => {
   return await EventRepository.getMonthlyInscriptions(eventId);
 };
 
-export const removeAgendadoEvent = async (id_evento, id_user) => {
+export const removeAgendadoEvent = async (id_evento: string | number, id_user: string | number): Promise<void> => {
   const alreadyAgendado = await EventRepository.checkEventAgendado(id_evento, id_user);
   if (!alreadyAgendado) throw new Error('Event not found in user agenda');
   await EventRepository.removeEventFromAgenda(id_evento, id_user);
