@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
       message: 'Registration successful'
     });
   } catch (err) {
-    res.status(err.message === 'Email already registered' ? 409 : 500).json({ error: err.message || 'Registration failed' });
+    res.status((err as Error).message === 'Email already registered' ? 409 : 500).json({ error: (err as Error).message || 'Registration failed' });
   }
 });
 

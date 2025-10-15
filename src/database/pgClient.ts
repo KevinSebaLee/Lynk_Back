@@ -8,7 +8,7 @@ const pool = new Pool({
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
-  port: process.env.PGPORT,
+  port: process.env.PGPORT ? parseInt(process.env.PGPORT, 10) : 5432,
 });
 
 (async () => {
@@ -26,13 +26,13 @@ const pool = new Pool({
     client.release();
   } catch (err) {
     console.error('❌ Connection failed:', {
-      message: err.message,
-      stack: err.stack
+      message: (err as Error).message,
+      stack: (err as Error).stack
     });
 
     // Additional diagnostics
     try {
-      const lookup = await dns.promises.lookup(process.env.PGHOST);
+      const lookup = await dns.promises.lookup(process.env.PGHOST || 'localhost');
       console.log('DNS Lookup:', lookup);
     } catch (dnsErr) {
       console.error('DNS Error:', dnsErr);

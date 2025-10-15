@@ -1,7 +1,7 @@
 import pool from '../database/pgClient.js';
 
 class TicketRepository {
-  static async getMovimientos(id) {
+  static async getMovimientos(id: string | number) {
     const result = await pool.query(`
       SELECT m.*, u.tickets as tickets, e.nombre as evento_nombre, mo.nombre as moneda_nombre, c.nombre as categoria_nombre, tm.icon as tipo_movimiento_icon
       FROM "Movimientos" m
@@ -16,7 +16,7 @@ class TicketRepository {
     return result.rows;
   }
 
-  static async countTicketsLast6Months(id) {
+  static async countTicketsLast6Months(id: string | number) {
     const result = await pool.query(`
       SELECT 
         DATE_TRUNC('month', m.fecha_transaccion) AS month,
@@ -47,7 +47,7 @@ class TicketRepository {
     return result.rows;
   }
 
-  static async getCuponesEvento(id_evento){
+  static async getCuponesEvento(id_evento: string | number){
     console.log(id_evento)
 
     const result = await pool.query('SELECT * FROM "Cupones" WHERE id_evento = $1', [id_evento])
@@ -55,7 +55,7 @@ class TicketRepository {
     return result.rows
   }
 
-  static async getCuponByEventAndId(id_evento, id_cupon) {
+  static async getCuponByEventAndId(id_evento: string | number, id_cupon: string | number) {
     const result = await pool.query(
       'SELECT * FROM "Cupones" WHERE id_evento = $1 AND id = $2',
       [id_evento, id_cupon]
@@ -68,7 +68,14 @@ class TicketRepository {
     return result.rows;
   }
 
-  static async transferTickets({ senderId, tickets, receiverId, date, userSenderName, userReceiverName }) {
+  static async transferTickets({ senderId, tickets, receiverId, date, userSenderName, userReceiverName }: {
+    senderId: string | number;
+    tickets: any[];
+    receiverId: string | number;
+    date: any;
+    userSenderName: string;
+    userReceiverName: string;
+  }) {
     const sender = await pool.query('SELECT tickets FROM "Usuarios" WHERE id = $1', [senderId]);
     if (sender.rows[0].tickets < tickets) throw new Error('Insufficient tickets');
 
@@ -86,7 +93,7 @@ class TicketRepository {
   }
 
 
-  static async createCupon(couponBody) {
+  static async createCupon(couponBody: any) {
     const { nombre, descripcion, vencimiento, condiciones, beneficios, min_compra, max_usos, evento_id, descuento } = couponBody;
     const result = await pool.query(
       'INSERT INTO "Cupones" (titulo, descripcion, vencimiento, condiciones, beneficios, precio, cantidad, id_evento, descuento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',

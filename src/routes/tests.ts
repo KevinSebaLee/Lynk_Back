@@ -10,7 +10,7 @@ router.get('/health', async (req, res) => {
     res.json({ status: 'ok', db: result.rows[0] });
   } catch (err) {
     console.error('PostgreSQL Test Query Error:', err);
-    res.status(500).json({ status: 'error', error: err.message });
+    res.status(500).json({ status: 'error', error: (err as Error).message });
   }
 });
 
@@ -25,7 +25,7 @@ router.get('/tables', async (req, res) => {
     res.json({ tables: result.rows.map(r => r.table_name) });
   } catch (err) {
     console.error('PostgreSQL Table List Query Error:', err);
-    res.status(500).json({ status: 'error', error: err.message });
+    res.status(500).json({ status: 'error', error: (err as Error).message });
   }
 });
 

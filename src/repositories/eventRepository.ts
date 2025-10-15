@@ -1,7 +1,7 @@
 import pool from "../database/pgClient.js";
 
 class EventRepository {
-  static async createEvent(eventData, id_user) {
+  static async createEvent(eventData: any, id_user: string | number) {
     const {
       id_categoria,
       nombre,
@@ -66,7 +66,7 @@ class EventRepository {
     }
   }
 
-  static async updateEvent(eventData) {
+  static async updateEvent(eventData: any) {
     const {
       id,
       id_categoria,
@@ -134,7 +134,7 @@ class EventRepository {
     }
   }
 
-  static async deleteEvent(id) {
+  static async deleteEvent(id: string | number) {
     try {
       const deleteScheduledUsers = await pool.query(
         'DELETE FROM "EventosAgendados" WHERE id_evento = $1',
@@ -171,7 +171,7 @@ class EventRepository {
     return result.rows;
   }
 
-  static async getEventById(id) {
+  static async getEventById(id: string | number) {
     const baseQuery = `
       SELECT
       e.id,
@@ -201,7 +201,7 @@ class EventRepository {
     return result.rows[0];
   }
 
-  static async checkEventAgendado(id_evento, id_user) {
+  static async checkEventAgendado(id_evento: string | number, id_user: string | number) {
     const lookup = await pool.query(
       'SELECT id_evento FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2 LIMIT 1',
       [id_evento, id_user]
@@ -209,21 +209,21 @@ class EventRepository {
     return lookup.rows.length > 0;
   }
 
-  static async addEventToAgenda(id_evento, id_user, date) {
+  static async addEventToAgenda(id_evento: string | number, id_user: string | number, date: any) {
     await pool.query(
       'INSERT INTO "EventosAgendados" (id_evento, id_user, date) VALUES ($1, $2, $3)',
       [id_evento, id_user, date]
     );
   }
 
-  static async removeEventFromAgenda(id_evento, id_user) {
+  static async removeEventFromAgenda(id_evento: string | number, id_user: string | number) {
     await pool.query(
       'DELETE FROM "EventosAgendados" WHERE id_evento = $1 AND id_user = $2',
       [id_evento, id_user]
     );
   }
 
-  static async getMonthlyInscriptions(eventId) {
+  static async getMonthlyInscriptions(eventId: string | number) {
   const query = `
     SELECT EXTRACT(MONTH FROM date) AS month,
            COUNT(*) AS inscriptions
@@ -239,7 +239,7 @@ class EventRepository {
   }));
 }
 
-  static async getEventParticipants(eventId) {
+  static async getEventParticipants(eventId: string | number) {
     const result = await pool.query(
       'SELECT u.email FROM "EventosAgendados" ea JOIN "Usuarios" u ON ea.id_user = u.id WHERE ea.id_evento = $1',
       [eventId]

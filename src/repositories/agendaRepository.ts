@@ -1,7 +1,7 @@
 import pool from '../database/pgClient.js';
 
 class AgendaRepository {
-  static async getAgenda(id_user) {
+  static async getAgenda(id_user: string | number) {
     const result = await pool.query(
       `SELECT e.id, e.nombre, e.descripcion, e.fecha, e.ubicacion, e.color, e.imagen
         FROM "EventosAgendados" ea

@@ -21,7 +21,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id } = req.user!;
     const eventData = { ...req.body };
 
     const { eventId, imagePath } = await eventService.createEvent(eventData, id, req.file);
@@ -29,7 +29,7 @@ router.post('/', requireAuth, upload.single('imagen'), async (req, res) => {
     res.status(201).json({ message: 'Event created successfully', eventId, image: imagePath });
   } catch (err) {
     console.error('Event Route Error:', err);
-    res.status(500).json({ error: 'Failed to create event', details: err.message });
+    res.status(500).json({ error: 'Failed to create event', details: (err as Error).message });
   }
 });
 
@@ -62,18 +62,22 @@ router.put('/:id', requireAuth, upload.single('imagen'), async (req, res) => {
     console.error(err);
     res.status(500).json({
       error: 'Failed to update event',
-      details: err.message
+      details: (err as Error).message
     });
   }
 })
 
 router.delete('/:id', requireAuth, async (req, res) => {
-  console.log('Delete event request for ID:', req.params.id, 'by user:', req.user.id);
+  console.log('Delete event request for ID:', req.params.id, 'by user:', req.user!.id);
   try {
-    await eventService.deleteEvent(req.params.id, req.user.id);
+    const eventId = req.params.id;
+    if (!eventId) {
+      return res.status(400).json({ error: 'Event ID is required' });
+    }
+    await eventService.deleteEvent(eventId, req.user!.id);
     res.status(200).json({ message: 'Event deleted successfully' });
   } catch (err) {
-    res.status(err.message === 'Event not found' ? 404 : 500).json({ error: err.message });
+    res.status((err as Error).message === 'Event not found' ? 404 : 500).json({ error: (err as Error).message });
     }
 })
 
@@ -102,24 +106,28 @@ router.post('/send-cancellation', async (req, res) => {
     res.send('Correos enviados');
   } catch (error) {
   
-    res.status(500).send(error.message);
+    res.status(500).send((error as Error).message);
   }
 });
 
 router.get('/:id/participantes', async (req, res) => {
-  const { id } = req.params;
-  const participantes = await eventService.getEventParticipants(id);
-  res.json(participantes.map(p => p.Usuario));
+  const id = req.params.id;
+  const participantes = await eventService.getEventParticipantsEmails(id);
+  res.json(participantes);
 });
 
 router.post('/:id/agendar', requireAuth, async (req, res) => {
       console.error('HOLAA');
 
   try {
-    await eventService.agendarEvent(req.params.id, req.user.id);
+    const eventId = req.params.id;
+    if (!eventId) {
+      return res.status(400).json({ error: 'Event ID is required' });
+    }
+    await eventService.agendarEvent(eventId, req.user!.id);
     res.status(201).json({ message: 'Event scheduled successfully' });
   } catch (err) {
-    res.status(err.message === 'Event already registered' ? 409 : 500).json({ error: err.message });
+    res.status((err as Error).message === 'Event already registered' ? 409 : 500).json({ error: (err as Error).message });
   }
 });
 
@@ -150,20 +158,28 @@ router.get('/:id/inscripciones-mensuales', async (req, res) => {
 
 router.delete('/:id/agendar', requireAuth, async (req, res) => {
   try {
-    await eventService.removeAgendadoEvent(req.params.id, req.user.id);
+    const eventId = req.params.id;
+    if (!eventId) {
+      return res.status(400).json({ error: 'Event ID is required' });
+    }
+    await eventService.removeAgendadoEvent(eventId, req.user!.id);
     res.status(200).json({ message: 'Event removed from agenda successfully' });
   } catch (err) {
-    res.status(err.message === 'Event not found in user agenda' ? 404 : 500).json({ error: err.message });
+    res.status((err as Error).message === 'Event not found in user agenda' ? 404 : 500).json({ error: (err as Error).message });
   }
 });
 
 router.get('/:id', requireAuth, async (req, res) => {
   try {
-    const event = await eventService.getEvent(req.params.id);
+    const eventId = req.params.id;
+    if (!eventId) {
+      return res.status(400).json({ error: 'Event ID is required' });
+    }
+    const event = await eventService.getEvent(eventId);
 
     let isCreator = false;
 
-    if(event.id_creador == req.user.id){
+    if(event.id_creador == req.user!.id){
       isCreator = true;
     }
 

@@ -30,8 +30,7 @@ app.use(cors({
   origin: ['http://localhost:3000', 'stirring-intense-sheep.ngrok-free.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  sameSite: 'none'
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use('/', Home);

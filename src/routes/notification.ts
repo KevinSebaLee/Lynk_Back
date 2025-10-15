@@ -9,7 +9,7 @@ router.get('/:id_user', async (req, res) => {
     const notifications = await notificationService.getUserNotifications(req.params.id_user);
     res.json(notifications);
   } catch (err) {
-    res.status(500).json({ error: 'Error al obtener notificaciones', details: err.message });
+    res.status(500).json({ error: 'Error al obtener notificaciones', details: (err as Error).message });
   }
 });
 
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     const notification = await notificationService.createNotification(id_user, nombre, descripcion);
     res.status(201).json(notification);
   } catch (err) {
-    res.status(500).json({ error: 'Error al crear notificación', details: err.message });
+    res.status(500).json({ error: 'Error al crear notificación', details: (err as Error).message });
   }
 });
 
@@ -30,19 +30,16 @@ router.patch('/:id/read', async (req, res) => {
     const notification = await notificationService.markNotificationAsRead(req.params.id);
     res.json(notification);
   } catch (err) {
-    res.status(500).json({ error: 'Error al actualizar notificación', details: err.message });
+    res.status(500).json({ error: 'Error al actualizar notificación', details: (err as Error).message });
   }
 });
 
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await notificationService.deleteNotification(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Notificación no encontrada' });
-    }
     res.json(deleted);
   } catch (err) {
-    res.status(500).json({ error: 'Error al borrar notificación', details: err.message });
+    res.status(500).json({ error: 'Error al borrar notificación', details: (err as Error).message });
   }
 });
 

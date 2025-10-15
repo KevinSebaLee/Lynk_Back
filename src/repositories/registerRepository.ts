@@ -2,7 +2,7 @@ import pool from '../database/pgClient.js';
 import bcrypt from 'bcryptjs';
 
 class RegisterRepository {
-  static async registerUser(userData) {
+  static async registerUser(userData: any) {
     const { nombre, apellido, email, contraseña, id_pais, id_genero, id_premium, esEmpresa, cuil, telefono, direccion } = userData;
 
     const existing = await pool.query('SELECT id FROM "Usuarios" WHERE email = $1', [email]);

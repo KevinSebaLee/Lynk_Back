@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export async function sendCancellationEmail(recipients, eventName) {
+export async function sendCancellationEmail(recipients: string[], eventName: string) {
   if (!recipients || recipients.length === 0) return;
 
   let transporter = nodemailer.createTransport({

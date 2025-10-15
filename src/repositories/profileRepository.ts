@@ -1,7 +1,7 @@
 import pool from '../database/pgClient.js';
 
 class ProfileRepository {
-  static async getProfile(id) {
+  static async getProfile(id: string | number) {
     const result = await pool.query(`
       SELECT u.nombre, u.apellido, u.pfp, p.nombre AS pais_nombre, pl.titulo AS plan_titulo
       FROM "Usuarios" u

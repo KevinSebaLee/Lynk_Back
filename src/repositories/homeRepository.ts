@@ -1,7 +1,7 @@
 import pool from '../database/pgClient.js';
 
 class HomeRepository {
-  static async getHomeData(id) {
+  static async getHomeData(id: string | number) {
     const userResult = await pool.query(`
       SELECT u.nombre AS user_nombre, u.tickets, p.titulo AS plan_titulo 
       FROM "Usuarios" u

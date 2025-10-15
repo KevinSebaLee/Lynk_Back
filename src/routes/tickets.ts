@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id } = req.user!;
     const movimientos = await ticketService.getMovimientos(id);
     const ticketsMonth = await ticketService.getTicketsMonth(id);
 
@@ -26,7 +26,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.get('/transacciones', requireAuth, async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id } = req.user!;
     const transacciones = await ticketService.getMovimientos(id);
     res.json(transacciones);
   } catch (err) {
@@ -60,7 +60,10 @@ router.post('/cupones', requireAuth, async (req, res) => {
 
 router.get('/cupones/:id', requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: 'Event ID is required' });
+    }
     const cupon = await ticketService.getCuponesByEvent(id);
     res.json(cupon);
   } catch (err) {
@@ -71,7 +74,11 @@ router.get('/cupones/:id', requireAuth, async (req, res) => {
 
 router.get('/cupones/:id_evento/:id_cupon', requireAuth, async (req, res) => {
   try {
-    const { id_evento, id_cupon } = req.params;
+    const id_evento = req.params.id_evento;
+    const id_cupon = req.params.id_cupon;
+    if (!id_evento || !id_cupon) {
+      return res.status(400).json({ error: 'Event ID and Coupon ID are required' });
+    }
     const cupon = await ticketService.getCuponById(id_evento, id_cupon);
     if (!cupon) {
       return res.status(404).json({ error: 'Coupon not found for this event' });
@@ -102,15 +109,20 @@ router.post('/transferir', requireAuth, async (req, res) => {
 
     const formattedDate = mm + '/' + dd + '/' + yyyy;
 
-    const userReceiver = await userService.getUsers(req.body.receiverId)
-    const userSender = await userService.getUsers(req.body.senderId)
+    const users = await userService.getUsers();
+    const userReceiver = users.find((u: any) => u.id == req.body.receiverId);
+    const userSender = users.find((u: any) => u.id == req.body.senderId);
 
-    const dataToSend = { ...req.body, date: formattedDate, userSenderName: userSender[0].nombre, userReceiverName: userReceiver[0].nombre};
+    if (!userReceiver || !userSender) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const dataToSend = { ...req.body, date: formattedDate, userSenderName: userSender.nombre, userReceiverName: userReceiver.nombre};
 
     await ticketService.transferTickets(dataToSend);
     res.json({ message: 'Tickets transferred successfully' });
   } catch (err) {
-    res.status(400).json({ error: err.message || 'Failed to transfer tickets' });
+    res.status(400).json({ error: (err as Error).message || 'Failed to transfer tickets' });
   }
 });
 

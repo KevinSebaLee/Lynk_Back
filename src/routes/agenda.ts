@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const agenda = await agendaService.getAgenda(req.user.id);
+    const agenda = await agendaService.getAgenda(req.user!.id);
     res.json(agenda);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch agenda' });
